@@ -2,7 +2,6 @@
 
 O **AgroAnálise** é o Produto Mínimo Viável (MVP) de um sistema integrado de Inteligência Artificial e Internet das Coisas (IoT). Ele atua como um "companheiro virtual" para agricultores familiares com baixo letramento digital, transformando dados complexos de solo e clima em alertas visuais simples.
 
----
 
 ## 🎯 1. Escopo e Regras de Negócio
 * **Público-alvo:** Agricultores familiares que possuem letramento digital baixo ou nulo.
@@ -17,7 +16,6 @@ Para mensurar o sucesso e a adoção da solução pela comunidade agrícola loca
 * **Impacto Econômico e Ambiental:** Estimativa percentual de redução no desperdício de água de irrigação (eficiência hídrica) guiada pelos alertas preventivos.
 * **Impacto Produtivo:** Redução da taxa de perda de safras por estresse hídrico ou térmico tardiamente identificado.
 
-<<<<<<< HEAD
 ## 📚 3. Fontes de Dados e Referências Agronômicas
 * **EcoCrop (FAO) e Kaggle:** Bases de dados contendo limites mínimos, máximos e ideais de temperatura, necessidade hídrica e características do solo.
 * **INMET e Embrapa (ZARC):** Utilização de dados meteorológicos e parâmetros oficiais do Zoneamento Agrícola de Risco Climático para o cultivo do café.
@@ -50,7 +48,7 @@ O cronograma de desenvolvimento foi estruturado com base nas entregas exigidas p
     * Desenvolvimento do *frontend* simplificado (A lógica visual do "Semáforo Virtual").
     * Testes de integração fim-a-fim (Hardware captando dado ➡️ Python processando ➡️ IA avaliando ➡️ Interface mudando a cor).
     * Formatação da documentação final e preparação da apresentação para a banca avaliadora.
-=======
+
 ## ⚙️ Estrutura do Sistema
 1. **Coleta:** O código C++ (`.ino`) lê os sensores e imprime os dados na porta Serial.
 2. **Integração:** O script Python roda em loop capturando os dados e tratando possíveis erros de conexão com o Pandas.
