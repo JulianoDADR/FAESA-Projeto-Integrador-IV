@@ -19,7 +19,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 
 ---
 
-## Registro de uso de IA — 2026-11-04 (1/7): conferência do relatório C1 com o edital
+## Registro de uso de IA — 2026-11-04 (1/8): conferência do relatório C1 com o edital
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** comparar o relatório do projeto com o edital do PI-IV e apontar lacunas para o C1.
@@ -31,7 +31,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** histórico de commits conferido diretamente no GitHub; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** relatório revisado em `docs/`.
 
-## Registro de uso de IA — 2026-11-04 (2/7): redação dos textos complementares
+## Registro de uso de IA — 2026-11-04 (2/8): redação dos textos complementares
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** redigir os textos que faltavam: enquadramento e ODS, componente de IA, arquitetura de implantação, comunidade com dados oficiais, indicadores com metas, registro de uso de IA.
@@ -43,7 +43,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** números da comunidade conferidos nos documentos de origem (apresentação da SEAG-ES e artigo da Revista Ifes Ciência). Conferência no SIDRA/IBGE e revisão do grupo: pendentes.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `docs/fontes.md`.
 
-## Registro de uso de IA — 2026-11-04 (3/7): montagem do relatório revisado e organização do repositório
+## Registro de uso de IA — 2026-11-04 (3/8): montagem do relatório revisado e organização do repositório
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** reconstruir o relatório em Word com as correções, gerar o PDF e organizar o repositório (README, fontes e registro de IA).
@@ -54,7 +54,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** conferência visual do PDF gerado; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** commit que adiciona este registro.
 
-## Registro de uso de IA — 2026-11-04 (4/7): troca do LLM da camada de explicação
+## Registro de uso de IA — 2026-11-04 (4/8): troca do LLM da camada de explicação
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** trocar o LLM previsto na camada de explicação (de Groq para Claude, da Anthropic) no relatório e no README, e ajustar os trechos de custo.
@@ -65,7 +65,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** conferência do texto extraído do PDF; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `README.md`.
 
-## Registro de uso de IA — 2026-11-04 (5/7): preenchimento das responsabilidades por integrante
+## Registro de uso de IA — 2026-11-04 (5/8): preenchimento das responsabilidades por integrante
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** preencher o Quadro 7 (responsabilidades por integrante em C1, C2 e C3) do relatório.
@@ -76,7 +76,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`.
 
-## Registro de uso de IA — 2026-11-04 (6/7): revisão final (QA) e publicação
+## Registro de uso de IA — 2026-11-04 (6/8): revisão final (QA) e publicação
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** revisar o relatório e o repositório como QA e como professor da disciplina, corrigir o que fosse encontrado e publicar.
@@ -87,7 +87,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** checagens automáticas no texto do PDF (marcas soltas, citações e referências, ordem alfabética, sumário) e conferência do link do vídeo; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf`.
 
-## Registro de uso de IA — 2026-11-04 (7/7): LLM da camada de explicação volta a ser o Groq
+## Registro de uso de IA — 2026-11-04 (7/8): LLM da camada de explicação volta a ser o Groq
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo usada no desenvolvimento:** Claude Code (Claude Sonnet 5.5). O Groq (GroqCloud) é o LLM previsto **dentro do produto**, na camada de explicação; ainda não foi usado para gerar este material.
 - **Tarefa:** trocar o provedor do LLM do produto de Claude para Groq no relatório e no README, por ser a opção recomendada e gratuita do edital.
@@ -97,3 +97,14 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **O que foi aproveitado / alterado:** relatório (.docx e .pdf) e README regenerados.
 - **Como foi validado:** conferência do texto extraído do PDF (menções, citações e ordem das referências); revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `README.md`.
+
+## Registro de uso de IA — 2026-11-04 (8/8): conferência dos números da comunidade no IBGE
+- **Integrante:** Juliano Dantas (JulianoDADR)
+- **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
+- **Tarefa:** conferir no IBGE os números da caracterização da comunidade e passar o relatório a citar o IBGE como fonte primária.
+- **Prompt utilizado (trecho referente à tarefa):**
+  > 3. Confira
+- **Resultado (resumo):** consulta à API de dados abertos do IBGE (SIDRA, tabelas 6778, 6780, 6882, 6887 e 6955, UF 32). Confirmados 108.014 e 80.775 estabelecimentos, 17.088 com orientação técnica, 213.557 de 357.258 pessoas ocupadas, 1.079.038 de 3.246.763 hectares e a participação da agricultura familiar na produção de café (Conilon 51,0%; Arábica 57,6%). O número de 63.976 estabelecimentos com café e os 78,23% de familiares continuam citados ao artigo da Revista Ifes Ciência; os dados do IBGE por espécie são consistentes com ele.
+- **O que foi aproveitado / alterado:** seção 9.1 reescrita com os valores do IBGE; referência da SEAG-ES removida; README e `docs/fontes.md` atualizados.
+- **Como foi validado:** valores obtidos diretamente do IBGE e percentuais calculados a partir deles; revisão do grupo pendente.
+- **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `docs/fontes.md`, `README.md`.

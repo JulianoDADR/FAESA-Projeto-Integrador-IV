@@ -32,7 +32,7 @@ O **AgroAnálise** é um sistema de monitoramento de plantações de café (Ará
 
 ## 🌍 2. Comunidade impactada e indicadores
 
-Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agropecuário 2017 (via SEAG-ES), o estado tinha 108.014 estabelecimentos agropecuários, 75% deles de agricultura familiar, e 78,8% dos estabelecimentos familiares não recebiam assistência técnica. A caracterização completa está na seção 9.1 do relatório.
+Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agropecuário 2017 (IBGE, conferido no SIDRA), o estado tinha 108.014 estabelecimentos agropecuários, 74,8% deles de agricultura familiar, e 78,8% dos estabelecimentos familiares não recebiam orientação técnica. A caracterização completa está na seção 9.1 do relatório.
 
 | Indicador | Meta proposta (C3) |
 |---|---|
