@@ -1,57 +1,75 @@
 # 🌱 AgroAnálise: Inclusão Digital no Campo com IoT e Machine Learning
 
-O **AgroAnálise** é o Produto Mínimo Viável (MVP) de um sistema integrado de Inteligência Artificial e Internet das Coisas (IoT). Ele atua como um "companheiro virtual" para agricultores familiares com baixo letramento digital, transformando dados complexos de solo e clima em alertas visuais simples.
+Projeto Integrador IV (2026/2) — FAESA Centro Universitário — Sistemas de Informação e Ciência da Computação
+Professor: Prof. M.Sc. Howard Cruz Roatti
 
+O **AgroAnálise** é um sistema de monitoramento de plantações de café (Arábica e Conilon) que combina Internet das Coisas (IoT), Machine Learning e uma aplicação web. Ele transforma leituras de solo e clima em um **semáforo** simples, voltado a agricultores familiares com baixo letramento digital.
 
-## 🎯 1. Escopo e Regras de Negócio
-* **Público-alvo:** Agricultores familiares que possuem letramento digital baixo ou nulo.
-* **Cultura Inicial:** Plantações de Café (Arábica/Conilon), devido à sua alta sensibilidade a variações de temperatura e umidade.
-* **Variáveis Medidas e Processadas:** Umidade do solo, temperatura do ambiente e umidade relativa do ar.
-* **Entrega de Valor (Interface):** Um sistema visual simplificado no formato de semáforo (🟢 Verde = Ideal, 🟡 Amarelo = Atenção, 🔴 Vermelho = Ação Crítica), eliminando a necessidade de leitura de gráficos complexos por parte do produtor.
+## 📍 Status dos checkpoints
 
-## 🌍 2. Justificativa e Indicadores de Impacto na Comunidade
-O projeto justifica-se pela promoção da inclusão digital no campo, trabalhando dados complexos no *backend* para entregar uma interface intuitiva no *frontend*. 
-Para mensurar o sucesso e a adoção da solução pela comunidade agrícola local, serão monitorados os seguintes **Indicadores de Impacto**:
-* **Impacto Tecnológico/Social:** Taxa de adoção autônoma (número de propriedades de agricultura familiar que conseguem operar o sistema sem necessidade de suporte técnico contínuo).
-* **Impacto Econômico e Ambiental:** Estimativa percentual de redução no desperdício de água de irrigação (eficiência hídrica) guiada pelos alertas preventivos.
-* **Impacto Produtivo:** Redução da taxa de perda de safras por estresse hídrico ou térmico tardiamente identificado.
+| Checkpoint | Prazo | Situação |
+|---|---|---|
+| **C1 – Relatório** | 18/09/2026 | Entregue e **revisado** conforme a correção do professor e o edital (ver `Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf` e `docs/`) |
+| **C2 – Protótipo (vídeo)** | 30/10/2026 | Vídeo do protótipo no YouTube (ver `Link video`) |
+| **C3 – MVP** | 04/12/2026 | Em andamento: aplicação web, testes, eval da IA, deploy com URL pública e análise de impacto |
 
-## 📚 3. Fontes de Dados e Referências Agronômicas
-* **EcoCrop (FAO) e Kaggle:** Bases de dados contendo limites mínimos, máximos e ideais de temperatura, necessidade hídrica e características do solo.
-* **INMET e Embrapa (ZARC):** Utilização de dados meteorológicos e parâmetros oficiais do Zoneamento Agrícola de Risco Climático para o cultivo do café.
+## 📄 Documentos
 
-## ⚙️ 4. Metodologia Aprofundada e Avaliação (Eval) do Componente de IA
-O desenvolvimento do sistema seguirá uma arquitetura integrada dividida em três camadas principais:
-* **Camada de Hardware (Coleta):** Utilização de microcontrolador (plataforma Arduino) equipado com sensor de umidade do solo (higrômetro) e sensor DHT11 para temperatura/umidade do ar.
-* **Camada de Processamento (Backend):** Um script em linguagem Python receberá as leituras via comunicação `PySerial`. As bibliotecas `Pandas` e `NumPy` farão o tratamento de ruídos para o armazenamento em banco de dados relacional (SQLite3).
-* **Inteligência Artificial e Avaliação (Eval):** O motor preditivo será desenvolvido com `Scikit-Learn` (modelo classificador para prever o risco da lavoura nos três estados do semáforo).
-    * **Metodologia de Avaliação (Eval):** Para atestar a viabilidade e a confiabilidade da IA, o conjunto de dados (dataset simulado/histórico) será dividido na proporção clássica de 80% para treinamento e 20% para teste (`train_test_split`). 
-    * O modelo será rigorosamente validado utilizando **Métricas de Classificação**:
-        * **Matriz de Confusão:** Para mapear onde a IA comete erros específicos (ex: classificar o solo como "Atenção" quando deveria ser "Ação Crítica").
-        * **Precision e Recall:** Métricas vitais para evitar **Falsos Positivos** (alertar o produtor para irrigar quando a terra já está úmida, desperdiçando água) e **Falsos Negativos** (não alertar o produtor quando a planta está morrendo de sede).
-        * **F1-Score e Accuracy:** Para garantir o balanceamento global na previsão correta do risco.
+- Relatório (PDF): [`Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf`](Relatorio_AgroAnalise_Projeto_Integrador_IV%20final.pdf)
+- Relatório (Word, editável): [`docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`](docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx)
+- Fontes de dados e referências: [`docs/fontes.md`](docs/fontes.md)
+- Registro do uso de IA (com os prompts): [`docs/uso-de-ia/REGISTRO.md`](docs/uso-de-ia/REGISTRO.md)
+- Vídeo do protótipo: ver o arquivo `Link video`
 
-## 📅 5. Plano de Trabalho (Organizado por Checkpoints do PI-IV)
-O cronograma de desenvolvimento foi estruturado com base nas entregas exigidas pela disciplina:
+## 🎯 1. Escopo e regras de negócio
 
-* **Checkpoint 1 (C1) – Escopo, Repositório e Levantamento:**
-    * Criação e atualização do repositório no GitHub.
-    * Definição clara das regras de negócio, arquitetura de hardware/software e os indicadores de impacto na comunidade.
-    * Levantamento bibliográfico e determinação dos parâmetros climáticos ideais para a cultura do café (Referências da Embrapa/EcoCrop).
+* **Área temática:** Tecnologia e Inovação (recorte em inclusão digital e sustentabilidade no campo). **ODS:** 9, 12 e 8.
+* **Público-alvo:** agricultores familiares com letramento digital baixo ou nulo.
+* **Cultura inicial:** café (Arábica e Conilon).
+* **Variáveis:** umidade do solo, temperatura do ambiente e umidade relativa do ar.
+* **Entrega de valor:** aplicação web com semáforo (🟢 Ideal, 🟡 Atenção, 🔴 Ação crítica), com texto e ícone além da cor, última atualização e aviso de dados indisponíveis.
+* **Fora do escopo do MVP:** acionamento automático de irrigação, diagnóstico de doenças, estimativa de produtividade, recomendação agronômica individualizada e aplicativo móvel nativo.
 
-* **Checkpoint 2 (C2) – Implementação IoT, Integração e Avaliação da IA (Eval):**
-    * Montagem física dos sensores no Arduino e estabelecimento da comunicação com o Python via PySerial.
-    * Estruturação do banco de dados SQLite e geração/limpeza do dataset com Pandas.
-    * **Foco central de IA (Eval):** Treinamento do modelo de classificação no Scikit-Learn e aplicação das métricas de avaliação detalhadas na metodologia (Matriz de Confusão, Precision e Recall) para comprovar a eficácia analítica do sistema.
+## 🌍 2. Comunidade impactada e indicadores
 
-* **Checkpoint 3 (C3) – Interface, Testes Finais e Documentação:**
-    * Desenvolvimento do *frontend* simplificado (A lógica visual do "Semáforo Virtual").
-    * Testes de integração fim-a-fim (Hardware captando dado ➡️ Python processando ➡️ IA avaliando ➡️ Interface mudando a cor).
-    * Formatação da documentação final e preparação da apresentação para a banca avaliadora.
+Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agropecuário 2017 (via SEAG-ES), o estado tinha 108.014 estabelecimentos agropecuários, 75% deles de agricultura familiar, e 78,8% dos estabelecimentos familiares não recebiam assistência técnica. A caracterização completa está na seção 9.1 do relatório.
 
-## ⚙️ Estrutura do Sistema
-1. **Coleta:** O código C++ (`.ino`) lê os sensores e imprime os dados na porta Serial.
-2. **Integração:** O script Python roda em loop capturando os dados e tratando possíveis erros de conexão com o Pandas.
-3. **Previsão:** Os valores limpos são passados para o modelo de Machine Learning (`.pkl`), que avalia as regras ideais da planta e devolve o status.
-4. **Interface:** Retorno visual simples baseado em cores: Verde (Tudo certo), Amarelo (Atenção) ou Vermelho (Ação imediata).
->>>>>>> 5cbead0e4949ac136b2f8a0b656f72b118a08fe8
+| Indicador | Meta proposta (C3) |
+|---|---|
+| Taxa de adoção autônoma (3 tarefas sem ajuda) | ≥ 70% dos participantes (mínimo de 10) |
+| Clareza percebida do semáforo (escala 1 a 5) | ≥ 80% das respostas 4 ou 5 |
+| Disponibilidade de leituras válidas (72 h) | ≥ 95% |
+| Revocação da classe Vermelho (conjunto de teste) | ≥ 0,90 |
+| Redução do desperdício de água | Plano de mensuração (sem meta numérica no semestre) |
+| Redução de perdas por identificação tardia | Indicador de longo prazo |
+
+## ⚙️ 3. Arquitetura
+
+1. **Aquisição:** Arduino com sensor de umidade do solo e DHT11 enviam as leituras por porta serial.
+2. **Gateway local (Python):** PySerial, Pandas e NumPy validam e tratam as leituras, guardam o histórico em SQLite e enviam os dados à nuvem por HTTPS autenticado.
+3. **Aplicação em nuvem:** API (backend) que armazena as leituras, executa o classificador Scikit-Learn (`.pkl`) e gera uma mensagem curta em linguagem simples (LLM via API do Claude, da Anthropic, com mensagens-padrão de contingência).
+4. **Apresentação:** frontend web com o semáforo virtual.
+
+O LLM **não decide** a classe: apenas reformula, em linguagem simples, a classificação feita pelo modelo supervisionado, a partir de entradas estruturadas.
+
+## 🧪 4. Avaliação (eval) e testes
+
+* **Classificador:** divisão 80/20 (estratificada quando possível), matriz de confusão, precisão, revocação, F1-Score e acurácia por classe e média macro, com linha de base e foco nos falsos negativos da classe crítica. Os dados simulados serão identificados como tais.
+* **Camada de explicação (LLM):** 30 cenários avaliados quanto a coerência com a classe, ausência de recomendação agronômica específica, tamanho e linguagem, falhas da API e consumo de tokens.
+* **Testes de software:** unitários, de integração e de ponta a ponta (incluindo falhas de sensor, mensagem serial incompleta e indisponibilidade do LLM).
+
+## 🔐 5. IA responsável
+
+LGPD (sem dados pessoais na operação básica), mitigação de *prompt injection* (entrada estruturada, sem texto livre), segredos fora do repositório, transparência sobre limitações e acompanhamento de custo (tokens e chamadas no plano gratuito).
+
+## 📅 6. Plano de trabalho por checkpoint
+
+* **C1:** escopo, justificativa, metodologia, comunidade, indicadores, plano de trabalho e repositório inicial.
+* **C2:** montagem dos sensores, comunicação serial, banco SQLite, dataset, treino inicial do classificador, primeiros testes e vídeo.
+* **C3:** aplicação web, camada de explicação, integração completa, testes, eval, deploy com URL pública, documentação e análise de impacto.
+
+## 👥 Equipe
+
+Cauan Henrique Damascena Gomes · Eduardo Rodrigues Rangel Malaquias · Guilherme de Souza Paiva · Juliano de Andrade Dantas Rodrigues · Rubiale Alves de Melo Filho
+
+Cada integrante faz *commits* com o próprio usuário e e-mail. O uso de IA no desenvolvimento é registrado em `docs/uso-de-ia/`.
