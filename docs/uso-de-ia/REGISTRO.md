@@ -19,7 +19,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 
 ---
 
-## Registro de uso de IA — 2026-11-04 (1/5): conferência do relatório C1 com o edital
+## Registro de uso de IA — 2026-11-04 (1/6): conferência do relatório C1 com o edital
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** comparar o relatório do projeto com o edital do PI-IV e apontar lacunas para o C1.
@@ -31,7 +31,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** histórico de commits conferido diretamente no GitHub; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** relatório revisado em `docs/`.
 
-## Registro de uso de IA — 2026-11-04 (2/5): redação dos textos complementares
+## Registro de uso de IA — 2026-11-04 (2/6): redação dos textos complementares
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** redigir os textos que faltavam: enquadramento e ODS, componente de IA, arquitetura de implantação, comunidade com dados oficiais, indicadores com metas, registro de uso de IA.
@@ -43,7 +43,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** números da comunidade conferidos nos documentos de origem (apresentação da SEAG-ES e artigo da Revista Ifes Ciência). Conferência no SIDRA/IBGE e revisão do grupo: pendentes.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `docs/fontes.md`.
 
-## Registro de uso de IA — 2026-11-04 (3/5): montagem do relatório revisado e organização do repositório
+## Registro de uso de IA — 2026-11-04 (3/6): montagem do relatório revisado e organização do repositório
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** reconstruir o relatório em Word com as correções, gerar o PDF e organizar o repositório (README, fontes e registro de IA).
@@ -54,7 +54,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** conferência visual do PDF gerado; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** commit que adiciona este registro.
 
-## Registro de uso de IA — 2026-11-04 (4/5): troca do LLM da camada de explicação
+## Registro de uso de IA — 2026-11-04 (4/6): troca do LLM da camada de explicação
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** trocar o LLM previsto na camada de explicação (de Groq para Claude, da Anthropic) no relatório e no README, e ajustar os trechos de custo.
@@ -65,7 +65,7 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **Como foi validado:** conferência do texto extraído do PDF; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `README.md`.
 
-## Registro de uso de IA — 2026-11-04 (5/5): preenchimento das responsabilidades por integrante
+## Registro de uso de IA — 2026-11-04 (5/6): preenchimento das responsabilidades por integrante
 - **Integrante:** Juliano Dantas (JulianoDADR)
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** preencher o Quadro 7 (responsabilidades por integrante em C1, C2 e C3) do relatório.
@@ -75,3 +75,14 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **O que foi aproveitado / alterado:** a divisão foi proposta pela IA e deve ser conferida e ajustada pelo grupo.
 - **Como foi validado:** revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`.
+
+## Registro de uso de IA — 2026-11-04 (6/6): revisão final (QA) e publicação
+- **Integrante:** Juliano Dantas (JulianoDADR)
+- **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
+- **Tarefa:** revisar o relatório e o repositório como QA e como professor da disciplina, corrigir o que fosse encontrado e publicar.
+- **Prompt utilizado:**
+  > Show pode commitar para eu publicar, como um QA e Professor de Projeto Integrador valide tudo e publique
+- **Resultado (resumo):** conferência contra o edital e a rubrica do C1; citações ligadas às referências (IBGE, Anthropic, Nações Unidas); referência do IBGE reordenada; trecho de armazenamento ajustado ao deploy em nuvem; afirmações sobre o Conilon alinhadas ao artigo citado; recorte regional (Norte e Noroeste) e perfil dos participantes dos testes definidos; vídeo do protótipo confirmado como público.
+- **O que foi aproveitado / alterado:** relatório (.docx e .pdf) regenerado. O recorte regional e o perfil dos participantes foram escolhidos pela IA e devem ser confirmados pelo grupo.
+- **Como foi validado:** checagens automáticas no texto do PDF (marcas soltas, citações e referências, ordem alfabética, sumário) e conferência do link do vídeo; revisão do grupo pendente.
+- **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf`.
