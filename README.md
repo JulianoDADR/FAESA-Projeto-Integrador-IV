@@ -47,7 +47,7 @@ Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agrope
 
 1. **Aquisição:** Arduino com sensor de umidade do solo e DHT11 enviam as leituras por porta serial.
 2. **Gateway local (Python):** PySerial, Pandas e NumPy validam e tratam as leituras, guardam o histórico em SQLite e enviam os dados à nuvem por HTTPS autenticado.
-3. **Aplicação em nuvem:** API (backend) que armazena as leituras, executa o classificador Scikit-Learn (`.pkl`) e gera uma mensagem curta em linguagem simples (LLM via API do Claude, da Anthropic, com mensagens-padrão de contingência).
+3. **Aplicação em nuvem:** API (backend) que armazena as leituras, executa o classificador Scikit-Learn (`.pkl`) e gera uma mensagem curta em linguagem simples (LLM via API do GroqCloud, com mensagens-padrão de contingência).
 4. **Apresentação:** frontend web com o semáforo virtual.
 
 O LLM **não decide** a classe: apenas reformula, em linguagem simples, a classificação feita pelo modelo supervisionado, a partir de entradas estruturadas.

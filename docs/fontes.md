@@ -12,3 +12,4 @@ Registro das fontes usadas no projeto, conforme a seção 7.2 do relatório (ide
 | MAPA – ZARC Café | https://www.gov.br/agricultura/pt-br/assuntos/riscos-seguro/programa-nacional-de-zoneamento-agricola-de-risco-climatico/notas-tecnicas-air/cafe_arabica | 26/10/2026 | Contexto de risco climático | Não usar como gatilho de irrigação |
 | Embrapa – Bonomo et al. (2014), manejo de água em Conilon | https://www.embrapa.br/en/busca-de-publicacoes/-/publicacao/997903/alternativas-de-manejo-de-agua-de-irrigacao-em-cultivos-de-conilon | 26/10/2026 | Contexto do manejo de irrigação no Norte do ES | Nenhuma |
 | Kaggle | A definir | – | Possível composição do dataset | Registrar o conjunto exato quando for usado |
+| GroqCloud – documentação | https://console.groq.com/docs | 04/11/2026 | LLM da camada de explicação (plano gratuito) | Conferir os limites vigentes do plano antes do C3 |
