@@ -1,0 +1,70 @@
+{
+  "acuracia": 0.7517,
+  "por_classe": {
+    "Verde": {
+      "precisao": 0.657,
+      "revocacao": 0.9252,
+      "f1": 0.7684,
+      "suporte": 147
+    },
+    "Amarelo": {
+      "precisao": 0.6687,
+      "revocacao": 0.5459,
+      "f1": 0.6011,
+      "suporte": 196
+    },
+    "Vermelho": {
+      "precisao": 0.8927,
+      "revocacao": 0.8093,
+      "f1": 0.849,
+      "suporte": 257
+    }
+  },
+  "media_macro": {
+    "precisao": 0.7395,
+    "revocacao": 0.7601,
+    "f1": 0.7395
+  },
+  "matriz_confusao": [
+    [
+      136,
+      11,
+      0
+    ],
+    [
+      64,
+      107,
+      25
+    ],
+    [
+      7,
+      42,
+      208
+    ]
+  ],
+  "classes": [
+    "Verde",
+    "Amarelo",
+    "Vermelho"
+  ],
+  "algoritmo": "DecisionTreeClassifier(max_depth=8, min_samples_leaf=5)",
+  "revocacao_vermelho": 0.8093,
+  "falsos_negativos_vermelho": 49,
+  "linha_base": {
+    "estrategia": "classe majoritária (DummyClassifier)",
+    "acuracia": 0.4283,
+    "media_macro": {
+      "precisao": 0.1428,
+      "revocacao": 0.3333,
+      "f1": 0.1999
+    },
+    "revocacao_vermelho": 1.0
+  },
+  "tamanho_treino": 2400,
+  "tamanho_teste": 600,
+  "divisao": "80/20 estratificada (train_test_split, random_state=42)",
+  "origem_dados": "simulado",
+  "versao_scikit_learn": "1.9.1",
+  "gerado_em": "2026-11-07T01:42:22+00:00",
+  "aviso": "Rótulos gerados por regras sobre as mesmas variáveis de entrada: este resultado valida o pipeline, não a eficácia agronômica em campo."
+}
