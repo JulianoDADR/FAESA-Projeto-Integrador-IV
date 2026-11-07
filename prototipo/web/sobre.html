@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sobre e limites · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+  <h1 class="text-3xl font-extrabold">Sobre, limites e IA responsável</h1>
+
+  <section class="cartao"><h2 class="text-xl font-bold">O que o sistema faz</h2>
+    <ul class="list-disc pl-5 mt-1 space-y-1">
+      <li>Monitora três variáveis: umidade do solo, temperatura e umidade do ar.</li>
+      <li>Classifica em Ideal, Atenção ou Ação crítica com um modelo de Machine Learning (Scikit-Learn).</li>
+      <li>Escreve uma mensagem curta em linguagem simples (LLM). Se o LLM falhar, usa uma mensagem-padrão e o semáforo continua funcionando.</li>
+      <li>Sem leitura atualizada, mostra cinza com o aviso "Sem dados atualizados" e nunca presume que está tudo bem.</li></ul></section>
+
+  <section class="cartao estado vermelho"><h2 class="text-xl font-bold">O que NÃO faz</h2>
+    <ul class="list-disc pl-5 mt-1 space-y-1">
+      <li>Não aciona irrigação nem controla bombas ou válvulas.</li>
+      <li>Não diagnostica doenças nem estima produtividade.</li>
+      <li>Não dá recomendação agronômica individualizada (produtos, doses, volumes de água).</li>
+      <li>Não é aplicativo nativo; é uma página web.</li>
+      <li>A decisão de manejo é sempre do produtor, com orientação técnica quando necessário.</li></ul></section>
+
+  <section class="cartao estado amarelo"><h2 class="text-xl font-bold">Limites desta versão</h2>
+    <ul class="list-disc pl-5 mt-1 space-y-1">
+      <li><b>Todos os dados são simulados.</b> Nenhuma leitura é de lavoura real; o Arduino ainda não está montado.</li>
+      <li><b>As faixas de Ideal, Atenção e Crítico são provisórias, de demonstração. Não são parâmetros agronômicos validados.</b> A validação com referências (ZARC, Embrapa) e orientação agronômica é uma etapa posterior.</li>
+      <li>Os rótulos do treino vêm de regras sobre as mesmas variáveis de entrada: as métricas validam o pipeline, não a eficácia em campo.</li>
+      <li>Não há afirmação de economia de água nem de ganho de produtividade.</li></ul></section>
+
+  <section class="cartao"><h2 class="text-xl font-bold">IA responsável</h2>
+    <ul class="list-disc pl-5 mt-1 space-y-1">
+      <li><b>O LLM nunca decide a classe.</b> Só reformula a classe calculada pelo classificador.</li>
+      <li><b>Prompt injection:</b> o LLM recebe apenas campos estruturados e validados (classe, espécie, três números). Nenhum texto livre chega a ele, e campos extras são recusados pela API.</li>
+      <li><b>Saída verificada:</b> no máximo 2 frases, em português, coerente com a classe e sem dose, volume ou produto; senão vale a mensagem-padrão.</li>
+      <li><b>LGPD:</b> o sistema não coleta nem envia dados pessoais.</li>
+      <li><b>Plano gratuito e custo:</b> o GroqCloud tem limites de uso. Usamos cache, respostas curtas, timeout de 5 s e registro de tokens por chamada.</li>
+      <li><b>Segredos:</b> a chave de API fica só em variável de ambiente, nunca no repositório.</li></ul></section>
+</main>
+</body>
+</html>

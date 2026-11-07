@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avaliação · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-3xl font-extrabold">Avaliação do classificador</h1>
+    <p class="mt-1">Números reais do último treino, lidos de <code>/metricas</code>.</p>
+  </div>
+  <div id="aviso" class="aviso-caixa"><b>Atenção ao que este número significa.</b> <span id="aviso-texto">Rótulos gerados por regras sobre as mesmas variáveis de entrada: este resultado valida o pipeline, não a eficácia agronômica em campo.</span></div>
+  <div id="erro" class="erro-caixa" hidden></div>
+  <div id="conteudo" class="space-y-5"></div>
+</main>
+
+<script>
+const ORDEM = ["Verde", "Amarelo", "Vermelho"];
+const COR = { Verde: "var(--verde-fundo)", Amarelo: "var(--amarelo-fundo)", Vermelho: "var(--vermelho-fundo)" };
+
+function matriz(m) {
+  const cab = ORDEM.map((c) => `<th scope="col" class="text-center">Previsto:<br>${rotuloClasse(c)}</th>`).join("");
+  const linhas = m.map((l, i) => `<tr><th scope="row">Real: ${rotuloClasse(ORDEM[i])}</th>` + l.map((v, j) =>
+    `<td class="text-center text-xl ${i === j ? "font-extrabold" : ""}" style="${i === j ? "background:" + COR[ORDEM[i]] : ""}">${v}</td>`).join("") + "</tr>").join("");
+  return `<table class="tabela"><thead><tr><th></th>${cab}</tr></thead><tbody>${linhas}</tbody></table>`;
+}
+
+function porClasse(m) {
+  return `<table class="tabela"><thead><tr><th>Classe</th><th>Precisão</th><th>Revocação</th><th>F1</th><th>Amostras</th></tr></thead><tbody>` +
+    ORDEM.map((c) => { const x = m.por_classe[c];
+      return `<tr><th scope="row">${rotuloClasse(c)}</th><td>${pct(x.precisao)}</td><td>${pct(x.revocacao)}</td><td>${pct(x.f1)}</td><td>${x.suporte}</td></tr>`; }).join("") +
+    `<tr class="font-bold"><th scope="row">Média macro</th><td>${pct(m.media_macro.precisao)}</td><td>${pct(m.media_macro.revocacao)}</td><td>${pct(m.media_macro.f1)}</td><td>${m.tamanho_teste}</td></tr></tbody></table>`;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const r = await chamarApi("/metricas");
+  if (!r.ok) {
+    const e = document.getElementById("erro"); e.hidden = false;
+    e.textContent = r.erros[0] || "Métricas indisponíveis.";
+    return;
+  }
+  const m = r.dados;
+  document.getElementById("aviso-texto").textContent = m.aviso;
+  const lb = m.linha_base;
+  document.getElementById("conteudo").innerHTML = `
+    <section class="grid gap-3 sm:grid-cols-3">
+      <div class="cartao text-center"><div class="text-4xl font-extrabold">${pct(m.acuracia)}</div><div>Acurácia (teste)</div></div>
+      <div class="cartao text-center estado vermelho"><div class="text-4xl font-extrabold">${pct(m.revocacao_vermelho)}</div>
+        <div><b>Revocação do Vermelho</b><br><span class="text-sm">${m.falsos_negativos_vermelho} casos críticos não detectados como Vermelho</span></div></div>
+      <div class="cartao text-center"><div class="text-4xl font-extrabold">${pct(lb.acuracia)}</div><div>Linha de base<br><span class="text-sm">${esc(lb.estrategia)}</span></div></div>
+    </section>
+    <section class="cartao"><h2 class="text-xl font-bold mb-2">Matriz de confusão</h2>${matriz(m.matriz_confusao)}
+      <p class="text-sm mt-2">Linhas = classe real; colunas = classe prevista. A diagonal são os acertos.</p></section>
+    <section class="cartao"><h2 class="text-xl font-bold mb-2">Por classe e média macro</h2>${porClasse(m)}</section>
+    <section class="cartao"><h2 class="text-xl font-bold mb-2">Por que a revocação do Vermelho importa</h2>
+      <p>Um caso crítico que o sistema não sinaliza como Vermelho é o erro mais grave (falso negativo crítico). Por isso este número é acompanhado separadamente da acurácia.
+      A linha de base, que sempre responde a classe mais comum (${esc(m.linha_base.estrategia)}), serve para provar que o modelo faz mais que um palpite fixo: ela tem acurácia de ${pct(lb.acuracia)} e F1 macro de ${pct(lb.media_macro.f1)}, contra ${pct(m.media_macro.f1)} do modelo.</p></section>
+    <section class="cartao text-sm"><h2 class="text-xl font-bold mb-2">Como foi feito</h2>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Algoritmo: ${esc(m.algoritmo)}.</li><li>Divisão: ${esc(m.divisao)}; treino ${m.tamanho_treino} e teste ${m.tamanho_teste} amostras.</li>
+        <li>Dados: <b>${esc(m.origem_dados)}</b> (nenhuma medição real). Faixas provisórias de demonstração, não validadas agronomicamente.</li>
+        <li>scikit-learn ${esc(m.versao_scikit_learn)} · gerado em ${formatarHora(m.gerado_em)}.</li></ul></section>`;
+});
+</script>
+</body>
+</html>

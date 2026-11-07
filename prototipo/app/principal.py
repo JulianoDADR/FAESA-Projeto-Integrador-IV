@@ -25,7 +25,7 @@ app = FastAPI(title="AgroAnálise (protótipo)", description="Dados simulados, m
 CENARIOS = [
     {"id": "ideal", "nome": "Ideal", "especie": "Arabica", "umidade_solo": 55, "temperatura": 21, "umidade_ar": 72},
     {"id": "solo_seco", "nome": "Solo seco", "especie": "Arabica", "umidade_solo": 33, "temperatura": 22, "umidade_ar": 70},
-    {"id": "calor_excessivo", "nome": "Calor excessivo", "especie": "Conilon", "umidade_solo": 50, "temperatura": 38, "umidade_ar": 45},
+    {"id": "calor_excessivo", "nome": "Calor excessivo", "especie": "Conilon", "umidade_solo": 50, "temperatura": 38, "umidade_ar": 65},
     {"id": "muito_seco", "nome": "Solo muito seco", "especie": "Conilon", "umidade_solo": 12, "temperatura": 31, "umidade_ar": 50},
     {"id": "sem_dados", "nome": "Sem dados", "especie": "Arabica", "umidade_solo": None, "temperatura": None, "umidade_ar": None},
 ]

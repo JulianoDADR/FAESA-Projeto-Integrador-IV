@@ -1,0 +1,45 @@
+/* Cores do semáforo usadas SOMENTE para status (tokens inspirados no tema do hackathon). */
+:root {
+  --verde: #2E7D32; --verde-fundo: #E7F1E5; --verde-texto: #1D5220;
+  --amarelo: #D98A1C; --amarelo-fundo: #FDF1DE; --amarelo-texto: #7A4300;
+  --vermelho: #B3261E; --vermelho-fundo: #FBE8E6; --vermelho-texto: #8A1B15;
+  --cinza: #8C877E; --cinza-fundo: #ECEAE5; --cinza-texto: #4A4640;
+  --tinta: #1F1F1F; --fundo: #F7F6F2; --borda: #CFCAC2; --azul: #1565C0;
+}
+body { background: var(--fundo); color: var(--tinta); font-size: 18px; padding-top: 2.6rem; }
+.faixa-simulado { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--tinta); color: #fff;
+  text-align: center; font-weight: 700; letter-spacing: .04em; font-size: .85rem; padding: .5rem .75rem; }
+.menu a { display: inline-block; padding: .65rem 1rem; border-radius: .75rem; font-weight: 600; border: 2px solid transparent; }
+.menu a:hover { background: #fff; border-color: var(--borda); }
+.menu a[aria-current="page"] { background: var(--tinta); color: #fff; }
+.cartao { background: #fff; border: 1.5px solid var(--borda); border-radius: 1rem; padding: 1.25rem; }
+.botao { display: inline-flex; align-items: center; justify-content: center; min-height: 3.25rem; padding: .6rem 1.25rem;
+  border-radius: .85rem; font-weight: 700; border: 2px solid var(--tinta); background: #fff; cursor: pointer; }
+.botao:hover { background: #f0eee8; }
+.botao.principal { background: var(--tinta); color: #fff; }
+.botao.principal:hover { background: #3a3a3a; }
+.botao[aria-pressed="true"] { background: var(--azul); border-color: var(--azul); color: #fff; }
+.botao:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+
+/* Semáforo */
+.semaforo { display: flex; flex-direction: column; gap: .6rem; background: #2b2b2b; padding: 1rem; border-radius: 1.5rem;
+  width: max-content; margin: 0 auto; }
+.lampada { width: 4.5rem; height: 4.5rem; border-radius: 50%; background: #444; opacity: .35; border: 3px solid #555; }
+.lampada.acesa.verde { background: var(--verde); opacity: 1; border-color: #8fd093; }
+.lampada.acesa.amarelo { background: var(--amarelo); opacity: 1; border-color: #f2c680; }
+.lampada.acesa.vermelho { background: var(--vermelho); opacity: 1; border-color: #f0958f; }
+.estado { border-radius: 1rem; padding: 1.1rem 1.25rem; border: 3px solid; }
+.estado.verde { background: var(--verde-fundo); border-color: var(--verde); color: var(--verde-texto); }
+.estado.amarelo { background: var(--amarelo-fundo); border-color: var(--amarelo); color: var(--amarelo-texto); }
+.estado.vermelho { background: var(--vermelho-fundo); border-color: var(--vermelho); color: var(--vermelho-texto); }
+.estado.cinza { background: var(--cinza-fundo); border-color: var(--cinza); color: var(--cinza-texto); border-style: dashed; }
+.selo { display: inline-block; font-size: .85rem; font-weight: 700; padding: .25rem .65rem; border-radius: 999px; border: 2px solid; }
+.selo.llm { background: #E6EEF8; color: #0D3F7A; border-color: var(--azul); }
+.selo.padrao { background: var(--cinza-fundo); color: var(--cinza-texto); border-color: var(--cinza); }
+.barra { height: .9rem; border-radius: 999px; background: #e5e2db; overflow: hidden; }
+.barra > span { display: block; height: 100%; }
+.erro-caixa { background: var(--vermelho-fundo); border: 2px solid var(--vermelho); color: var(--vermelho-texto);
+  border-radius: .85rem; padding: .85rem 1rem; }
+.aviso-caixa { background: #E6EEF8; border: 2px solid var(--azul); color: #0D3F7A; border-radius: .85rem; padding: .85rem 1rem; }
+table.tabela { width: 100%; border-collapse: collapse; font-size: .95rem; }
+table.tabela th, table.tabela td { padding: .5rem .6rem; border-bottom: 1px solid var(--borda); text-align: left; }

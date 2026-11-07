@@ -108,3 +108,14 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **O que foi aproveitado / alterado:** seção 9.1 reescrita com os valores do IBGE; referência da SEAG-ES removida; README e `docs/fontes.md` atualizados.
 - **Como foi validado:** valores obtidos diretamente do IBGE e percentuais calculados a partir deles; revisão do grupo pendente.
 - **Arquivos/commit relacionados:** `docs/Relatorio_AgroAnalise_Projeto_Integrador_IV.docx`, `docs/fontes.md`, `README.md`.
+
+## Registro de uso de IA — 2026-11-06: protótipo navegável do C2 (AgroAnálise)
+- **Integrante:** Eduardo (Eduardo Rodrigues R Malaquias)
+- **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
+- **Tarefa:** construir o protótipo demonstrativo do C2 em `prototipo/`: dados simulados, classificador Scikit-Learn, API FastAPI com camada de explicação (GroqCloud com mensagens-padrão), páginas HTML navegáveis e testes automatizados.
+- **Prompt utilizado:**
+  > Prompt completo versionado em `PROTOTIPO.md` (raiz do repositório). Resumo fiel: construir hoje, até as 23:59, o protótipo do AgroAnálise com dados 100% simulados; API FastAPI que carrega o `.pkl` e serve páginas HTML + Tailwind (CDN) + JavaScript puro; LLM (GroqCloud) só reformula a classe calculada pelo classificador, com entrada estruturada, validação da saída e mensagem-padrão em caso de falha; faixas provisórias declaradas como não validadas; métricas honestas (linha de base, matriz de confusão, revocação do Vermelho); código em português; commits pequenos com a identidade Git do autor; sem push; sem segredos.
+- **Resultado (resumo):** `prototipo/` com `ml/` (dataset simulado, treino, métricas), `app/` (API, validação, explicação), `web/` (6 páginas), `testes/` (32 testes, todos passando) e README.
+- **O que foi aproveitado / alterado:** tudo foi gerado pela IA e deve ser revisado pelo autor. As faixas de rotulagem são provisórias, escolhidas pela IA só para demonstração, e não são parâmetros agronômicos. A amostragem do dataset foi reequilibrada após a primeira rodada (a classe Verde saiu com 4% das amostras). O cenário "Calor excessivo" usa umidade do ar 65% porque o modelo, com 45%, classifica como Amarelo um caso que a regra rotularia como crítico. Ideias visuais (paleta de status e semáforo com texto e ícone) vieram do projeto do hackathon, sem copiar marca ou texto.
+- **Como foi validado:** `pytest -v` (32 passed); teste de fumaça com o servidor no ar (todas as páginas e rotas responderam 200, erros de validação devolveram 422 sem classe, falha simulada do LLM devolveu mensagem-padrão). A chamada real ao Groq **não foi testada** (sem chave nesta sessão).
+- **Arquivos/commit relacionados:** `prototipo/`, `.gitignore`, `docs/uso-de-ia/REGISTRO.md`. Commits de `ml/` e `app/` com `testes/` vieram antes desta entrada; esta entrada fecha o conjunto.

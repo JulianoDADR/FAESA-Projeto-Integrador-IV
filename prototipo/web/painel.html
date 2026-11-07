@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-3xl font-extrabold">Painel da lavoura</h1>
+    <p class="mt-1">Escolha um cenário simulado para ver como o semáforo aparece para o produtor.</p>
+  </div>
+
+  <section aria-labelledby="t-cen"><h2 id="t-cen" class="sr-only">Cenários</h2>
+    <div id="cenarios" class="flex flex-wrap gap-2"></div></section>
+
+  <section class="cartao" aria-live="polite"><div id="semaforo"></div></section>
+
+  <section id="leituras" class="grid grid-cols-3 gap-3" hidden></section>
+
+  <p class="text-sm">O semáforo é um apoio. A decisão de manejo é sempre do produtor. As faixas usadas são provisórias, de demonstração.</p>
+</main>
+
+<script>
+async function mostrar(c) {
+  const sem = document.getElementById("semaforo"), leit = document.getElementById("leituras");
+  if (c.umidade_solo === null) {
+    // Regra 6.2: sem leitura válida, nunca exibir cor de avaliação.
+    desenharSemaforo(sem, { classe: null, mensagem: "Não recebemos leitura recente dos sensores. Confira o equipamento. Nenhuma avaliação é mostrada." });
+    leit.hidden = true;
+    return;
+  }
+  const corpo = { especie: c.especie, umidade_solo: c.umidade_solo, temperatura: c.temperatura, umidade_ar: c.umidade_ar };
+  const r = await chamarApi("/classificar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  if (!r.ok) {
+    desenharSemaforo(sem, { classe: null, mensagem: r.erros[0] });
+    leit.hidden = true;
+    return;
+  }
+  desenharSemaforo(sem, { classe: r.dados.classe, mensagem: r.dados.mensagem, atualizado_em: r.dados.atualizado_em, selo: seloMensagem(r.dados.origem_mensagem) });
+  leit.hidden = false;
+  const itens = [["Solo", c.umidade_solo + "%"], ["Temperatura", c.temperatura + " °C"], ["Ar", c.umidade_ar + "%"]];
+  leit.innerHTML = itens.map(([n, v]) => `<div class="cartao text-center"><div class="text-2xl font-extrabold">${v}</div><div class="text-sm">${n}</div></div>`).join("");
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const r = await chamarApi("/cenarios");
+  const alvo = document.getElementById("cenarios");
+  if (!r.ok) {
+    alvo.innerHTML = '<div class="erro-caixa">Servidor fora do ar. Ligue-o com: uvicorn app.principal:app</div>';
+    desenharSemaforo(document.getElementById("semaforo"), { classe: null, mensagem: "Sem conexão com o servidor." });
+    return;
+  }
+  alvo.innerHTML = r.dados.map((c, i) => `<button class="botao" data-i="${i}" aria-pressed="false">${esc(c.nome)}</button>`).join("");
+  const botoes = [...alvo.querySelectorAll("button")];
+  botoes.forEach((b) => b.addEventListener("click", () => {
+    botoes.forEach((x) => x.setAttribute("aria-pressed", x === b));
+    mostrar(r.dados[+b.dataset.i]);
+  }));
+  botoes[0].click();
+});
+</script>
+</body>
+</html>

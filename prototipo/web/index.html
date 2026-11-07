@@ -1,1 +1,41 @@
-<html></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgroAnálise · Início</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+  <section>
+    <h1 class="text-4xl font-extrabold leading-tight">Seu cafezal em um semáforo</h1>
+    <p class="mt-2 text-xl">O AgroAnálise lê o solo e o clima da lavoura de café (Arábica e Conilon) e mostra, em linguagem simples, se está tudo <b>Ideal</b>, pede <b>Atenção</b> ou exige <b>Ação crítica</b>.</p>
+  </section>
+
+  <div class="aviso-caixa"><b>Esta é uma versão de demonstração.</b> O equipamento (Arduino e sensores) ainda <b>não está conectado</b>: todas as leituras são <b>simuladas</b>.</div>
+
+  <section class="cartao"><h2 class="text-xl font-bold">Para quem é</h2>
+    <p class="mt-1">Agricultores familiares cafeicultores, inclusive com pouca prática no uso de tecnologia: poucos elementos na tela, texto grande e cor sempre acompanhada de palavra e ícone.</p></section>
+
+  <section aria-labelledby="t-fluxo"><h2 id="t-fluxo" class="text-xl font-bold mb-2">Como funciona, em 4 camadas</h2>
+    <ol class="grid gap-3 sm:grid-cols-4">
+      <li class="cartao"><div class="text-sm font-bold">1 · Sensores</div><p>Solo, temperatura e umidade do ar. <span class="text-sm">(simulados aqui)</span></p></li>
+      <li class="cartao"><div class="text-sm font-bold">2 · Gateway</div><p>Recebe e confere as leituras. <span class="text-sm">(previsto no MVP)</span></p></li>
+      <li class="cartao"><div class="text-sm font-bold">3 · API e IA</div><p>Um classificador decide a cor; um LLM só escreve a mensagem.</p></li>
+      <li class="cartao"><div class="text-sm font-bold">4 · Semáforo</div><p>Cor, palavra, ícone e hora da última leitura.</p></li>
+    </ol></section>
+
+  <section aria-labelledby="t-ir"><h2 id="t-ir" class="text-xl font-bold mb-2">Explore</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <a class="botao principal" href="ia.html">IA ao vivo (classificar de verdade)</a>
+      <a class="botao" href="painel.html">Painel do semáforo</a>
+      <a class="botao" href="historico.html">Histórico simulado</a>
+      <a class="botao" href="avaliacao.html">Avaliação do modelo</a>
+      <a class="botao" href="sobre.html">O que não faz e limites</a>
+    </div></section>
+</main>
+</body>
+</html>
