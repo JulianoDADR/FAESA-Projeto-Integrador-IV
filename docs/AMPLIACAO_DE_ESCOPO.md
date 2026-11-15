@@ -31,7 +31,7 @@ umidade do ar) e à classificação em três estados. O mapa traz informação d
 
 1. **Revisão humana das orientações** (`revisado_por_humano` está `false`), de preferência com alguém da Defesa
    Civil, do Corpo de Bombeiros ou do Incaper.
-2. **Confirmar os números de emergência (199 e 193)** em página oficial: nesta sessão os sites da Defesa Civil e do
-   Corpo de Bombeiros do ES não exibiam esses números (campo `emergencia.situacao = "verificar"`).
+2. **Números de emergência (199 e 193) confirmados em fonte oficial em 15/11/2026** (CBMES, 21/01/2026; MCom,
+   11/09/2026). Falta apenas a revisão humana dos textos das orientações.
 3. Decidir se o relatório incorpora o módulo ou se ele fica só como demonstração.
 4. Se houver dados reais no futuro, implementar `ProvedorReal` a partir de `docs/riscos_fontes_reais.md`.

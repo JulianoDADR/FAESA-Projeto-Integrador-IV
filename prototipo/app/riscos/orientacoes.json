@@ -5,8 +5,8 @@
   "emergencia": {
     "defesa_civil": "199",
     "bombeiros": "193",
-    "situacao": "verificar",
-    "nota": "Números nacionais de emergência conhecidos, mas NÃO confirmados em página oficial nesta sessão (os sites da Defesa Civil e do Corpo de Bombeiros do ES consultados em 15/11/2026 não exibiam os números). Confirmar antes de publicar."
+    "situacao": "confirmado",
+    "nota": "Números confirmados em fonte oficial em 15/11/2026: notícia do CBMES de 21/01/2026 cita 193 (Bombeiros) e 199 (Defesa Civil); o Ministério das Comunicações (11/09/2026) também lista os dois. A revisão humana dos textos das orientações continua pendente (revisado_por_humano=false)."
   },
   "tipos": {
     "alagamento": {

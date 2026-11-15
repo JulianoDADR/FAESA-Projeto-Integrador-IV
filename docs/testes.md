@@ -1,11 +1,11 @@
 # Testes automatizados
 
 Gerado por `python scripts/relatorio_testes.py` (dentro de `prototipo/`) em
-2026-11-15T21:29:08+00:00, a partir de uma execução real do `pytest`.
+2026-11-15T22:02:41+00:00, a partir de uma execução real do `pytest`.
 O mesmo `pytest` roda no GitHub Actions a cada push (`.github/workflows/testes.yml`), sem segredos: o LLM é sempre
 simulado e cada teste usa um banco SQLite temporário.
 
-**Resultado: 205 de 205 testes aprovados** (`205 passed, 1 warning in 6.90s`).
+**Resultado: 205 de 205 testes aprovados** (`205 passed, 1 warning in 7.37s`).
 
 ## Cenários exigidos (relatório, seção 7.6) e o que cobre cada um
 
@@ -241,7 +241,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_esquema_das_camadas_de_risco[norte]`
 - ✅ `test_esquema_das_camadas_de_risco[serrana]`
 - ✅ `test_mapa_so_chama_a_api_com_o_nome_da_regiao`
-- ✅ `test_numeros_de_emergencia_marcados_para_conferencia`
+- ✅ `test_numeros_de_emergencia_confirmados_em_fonte_oficial`
 - ✅ `test_provedor_real_e_so_um_esboco`
 - ✅ `test_regiao_desconhecida_e_regioes`
 - ✅ `test_toda_orientacao_tem_fonte_oficial_e_nenhuma_dose_produto_ou_manejo`

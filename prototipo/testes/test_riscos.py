@@ -68,10 +68,11 @@ def test_toda_orientacao_tem_fonte_oficial_e_nenhuma_dose_produto_ou_manejo():
             assert not re.search(r"\d", texto), texto  # nenhum numero (dose, volume, calendario) nas orientacoes
 
 
-def test_numeros_de_emergencia_marcados_para_conferencia():
+def test_numeros_de_emergencia_confirmados_em_fonte_oficial():
     emergencia = riscos.carregar_orientacoes()["emergencia"]
     assert emergencia["defesa_civil"] == "199" and emergencia["bombeiros"] == "193"
-    assert emergencia["situacao"] in ("verificar", "confirmado") and emergencia["nota"]
+    assert emergencia["situacao"] == "confirmado"
+    assert "CBMES" in emergencia["nota"]
 
 
 # ---------- privacidade: a coordenada do usuario nao sai do navegador ----------
