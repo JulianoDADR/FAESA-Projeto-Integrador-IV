@@ -148,32 +148,51 @@ def _chamar_llm(mensagens):
 # ---------- validacao da saida do LLM ----------
 _DOSE_VOLUME = re.compile(r"\d+[.,]?\d*\s*(mg|g|kg|ml|l|litros?|m3|m³|mm|gramas?|quilos?|doses?)\b", re.I)
 _PRODUTOS = re.compile(r"\b(dose|doses|litros?|adubo|adubar|fertiliz\w*|fungicida|herbicida|inseticida|calda|defensivo)\b", re.I)
+# Ordens de manejo (mesmo sem numeros): o sistema nao recomenda manejo, so pede para olhar a lavoura.
+# Acrescentado depois da avaliacao de 2026-11-15 (docs/avaliacao/llm.md), em que "Regue bastante a lavoura" passou.
+_MANEJO = re.compile(r"\b(regue|reguem|regar|irrigue|irriguem|irrigar|aplique|apliquem|aplicar|adube|pulverize|pulverizar|molhe|molhar)\b", re.I)
 _PROIBIDO_VERDE = re.compile(r"cr[ií]tic|urgen|grave|perig|risco|preocup|aten[cç][aã]o", re.I)
 _PROIBIDO_AMARELO = re.compile(r"cr[ií]tic|urgen|grave|perig|tudo (bem|certo)|tranquil|[oó]tim", re.I)
 _PROIBIDO_VERMELHO = re.compile(r"tudo (bem|certo)|tranquil|[oó]tim|sem problema|dentro do (ideal|esperado)|condi[cç][oõ]es (ideais|boas)", re.I)
 _PROIBIDO = {"Verde": _PROIBIDO_VERDE, "Amarelo": _PROIBIDO_AMARELO, "Vermelho": _PROIBIDO_VERMELHO}
-_PALAVRAS_PT = {"o", "a", "os", "as", "de", "do", "da", "e", "em", "está", "estão", "na", "no", "para", "que", "é", "um", "uma", "se"}
+_PEDE_VERIFICACAO = re.compile(r"\b(vá|vai|ir|confira|conferir|verifique|verificar|avalie|avaliar|olhe|olhar|veja|ver)\b", re.I)
+# Deteccao simples de idioma: palavras comuns do portugues contra marcas de ingles e espanhol.
+# Ampliada depois da avaliacao de 2026-11-15: a lista curta antiga recusava frases curtas em portugues
+# (ex.: "Fique tranquilo, está tudo certo.") como "não parece português".
+_PALAVRAS_PT = {"o", "a", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "na", "no", "nas", "nos", "ao",
+                "para", "pela", "pelo", "por", "com", "que", "é", "um", "uma", "se", "não", "mas", "ou", "só", "há",
+                "está", "estão", "tudo", "mais", "muito", "bem", "hoje", "agora", "até", "sua", "seu", "pode", "vá",
+                "fique", "siga", "olhe", "ver", "lavoura", "solo", "café", "leitura", "leituras", "ar"}
+_PALAVRAS_ESTRANGEIRAS = {"the", "is", "and", "your", "with", "today", "field", "looks", "fine", "everything",
+                          "el", "en", "del", "hoy", "situación", "revise", "cafetal", "bien", "muy"}
+
+
+def motivos_de_rejeicao(texto, classe):
+    """Todos os problemas encontrados na saida, na ordem de prioridade. Lista vazia = mensagem aceita."""
+    if not isinstance(texto, str) or not texto.strip():
+        return ["vazia"]
+    texto = texto.strip()
+    motivos = []
+    if len(texto) > MAX_CARACTERES:
+        motivos.append("longa demais")
+    if len(re.findall(r"[.!?](\s|$)", texto)) > 2:
+        motivos.append("mais de 2 frases")
+    palavras = set(re.findall(r"[\wáéíóúâêôãõçñ]+", texto.lower()))
+    portugues, estrangeiras = len(palavras & _PALAVRAS_PT), len(palavras & _PALAVRAS_ESTRANGEIRAS)
+    if re.search(r"[Ѐ-ӿ぀-ヿ一-鿿ñ¿¡]", texto) or estrangeiras > portugues or portugues == 0:
+        motivos.append("não parece português")
+    if _DOSE_VOLUME.search(texto) or _PRODUTOS.search(texto) or _MANEJO.search(texto):
+        motivos.append("dose, volume ou produto")
+    # Vermelho precisa pedir a verificacao da area (relatorio, Quadro 3): uma mensagem que so acalma e o pior erro.
+    if _PROIBIDO[classe].search(texto) or (classe == "Vermelho" and not _PEDE_VERIFICACAO.search(texto)):
+        motivos.append("incoerente com a classe")
+    return motivos
 
 
 def validar_saida(texto, classe):
     """Devolve (ok, motivo). So aceita mensagem curta, em portugues, coerente e sem dose/volume."""
-    if not isinstance(texto, str) or not texto.strip():
-        return False, "vazia"
-    texto = texto.strip()
-    if len(texto) > MAX_CARACTERES:
-        return False, "longa demais"
-    if len(re.findall(r"[.!?](\s|$)", texto)) > 2:
-        return False, "mais de 2 frases"
-    if re.search(r"[Ѐ-ӿ぀-ヿ一-鿿]", texto):
-        return False, "idioma"
-    palavras = set(re.findall(r"[\wáéíóúâêôãõç]+", texto.lower()))
-    if len(palavras & _PALAVRAS_PT) < 2:
-        return False, "não parece português"
-    if _DOSE_VOLUME.search(texto) or _PRODUTOS.search(texto):
-        return False, "dose, volume ou produto"
-    if _PROIBIDO[classe].search(texto):
-        return False, "incoerente com a classe"
-    return True, ""
+    motivos = motivos_de_rejeicao(texto, classe)
+    return (not motivos), (motivos[0] if motivos else "")
 
 
 def gerar_mensagem(classe, leitura, forcar_falha=False):
