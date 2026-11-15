@@ -10,7 +10,7 @@ from app.validacao import validar_leitura
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 PAGINAS = sorted(p.name for p in WEB.glob("*.html"))
-TIPOS_DE_PASSO = {"abertura", "cenario", "sem_dados", "talhoes", "agricultor", "fim"}
+TIPOS_DE_PASSO = {"abertura", "cenario", "sem_dados", "talhoes", "mapa", "agricultor", "fim"}
 
 
 def test_roteiro_da_demonstracao_e_valido():

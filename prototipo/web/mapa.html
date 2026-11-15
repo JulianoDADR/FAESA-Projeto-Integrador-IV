@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <meta name="description" content="Mapa de riscos simulados da região (módulo demonstrativo).">
+  <title>Mapa de riscos · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-4">
+  <div>
+    <h1 class="text-3xl font-extrabold">Mapa de riscos da região</h1>
+    <p class="mt-1">Módulo <b>demonstrativo</b>: áreas de risco <b>simuladas</b> para alagamento, chuvas intensas, incêndio,
+      deslizamento de terra e pragas, com orientações gerais de prevenção.</p>
+  </div>
+
+  <div class="erro-caixa" role="note" id="aviso-riscos"><b>Dados simulados. Não use para decisões de segurança.</b>
+    Em emergência, ligue para a Defesa Civil (199) ou para o Corpo de Bombeiros (193).</div>
+
+  <section class="cartao space-y-3" aria-labelledby="t-regiao">
+    <h2 id="t-regiao" class="text-xl font-bold">Região</h2>
+    <div role="group" aria-label="Regiões de demonstração" id="regioes" class="flex flex-wrap gap-2"></div>
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="button" class="botao" id="localizar">📍 Usar minha localização</button>
+      <p class="text-base max-w-prose" id="consentimento">Sua localização é usada <b>só neste aparelho</b>, para centralizar o mapa e
+        escolher a região de demonstração mais próxima. Ela <b>não é enviada</b> ao nosso servidor nem guardada.</p>
+    </div>
+    <p id="situacao-local" class="aviso-caixa" role="status" hidden></p>
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+    <section class="space-y-3" aria-label="Mapa">
+      <fieldset class="cartao">
+        <legend class="font-bold px-1">Camadas de risco</legend>
+        <div id="camadas" class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <p class="text-sm mt-2">Nível em texto e na intensidade do preenchimento: <b>Baixo</b> (claro), <b>Médio</b>, <b>Alto</b> (forte).
+          Cada risco tem cor, símbolo e tipo de contorno próprios. Os marcadores redondos são os talhões, com o semáforo.</p>
+      </fieldset>
+      <div id="mapa" class="cartao p-0 overflow-hidden" style="height:60vh;min-height:360px" role="region"
+           aria-label="Mapa interativo com as áreas de risco simuladas. A lista ao lado traz as mesmas informações em texto."></div>
+    </section>
+
+    <aside class="cartao space-y-3" aria-labelledby="t-detalhe" aria-live="polite">
+      <h2 id="t-detalhe" class="text-xl font-bold">Detalhes</h2>
+      <div id="detalhe"><p>Toque numa área do mapa (ou escolha na lista abaixo) para ver o tipo, o nível, por que está
+        marcada e o que fazer.</p></div>
+      <div>
+        <h3 class="font-bold mt-2">Áreas desta região</h3>
+        <ul id="lista-areas" class="space-y-1 mt-1"></ul>
+      </div>
+    </aside>
+  </div>
+
+  <p class="text-sm">Os riscos não entram no cálculo do semáforo: o classificador continua usando só solo, temperatura e ar.
+    O mapa usa imagens do OpenStreetMap; ao carregá-las, o seu navegador fala direto com o servidor de mapas (ele vê o seu IP
+    e a área do mapa). Veja “Sobre e limites”.</p>
+</main>
+
+<script>
+const SIMBOLOS = {
+  gota: '<path d="M12 3c3 4 6 7.5 6 11a6 6 0 1 1-12 0c0-3.5 3-7 6-11z"/>',
+  nuvem: '<path d="M7 15a4 4 0 0 1 .5-8 5 5 0 0 1 9.5 1.5A3.5 3.5 0 0 1 17 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+  chama: '<path d="M12 3c1 4 5 5.5 5 10a5 5 0 1 1-10 0c0-2.5 1.5-4 2.5-5 .5 2 1.5 3 2.5 3 0-3-1-5 0-8z"/>',
+  encosta: '<path d="M3 20l7-11 3 4 2-3 6 10z"/><path d="M14 20l2-3"/>',
+  inseto: '<ellipse cx="12" cy="13" rx="3.5" ry="5"/><path d="M12 8V6M9 10l-4-2M15 10l4-2M8.5 14H4M15.5 14H20M9 17l-3 3M15 17l3 3"/>',
+};
+const OPACIDADE = { baixo: 0.12, medio: 0.28, alto: 0.45 };
+let mapa, dados = null, camadasPorTipo = {}, regioes = [], marcadorLocal = null, grupoTalhoes = null;
+
+function simbolo(tipo, cor, tamanho = 22) {
+  return `<svg viewBox="0 0 24 24" width="${tamanho}" height="${tamanho}" fill="none" stroke="${cor}" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SIMBOLOS[dados.tipos[tipo].simbolo]}</svg>`;
+}
+
+function amostraContorno(info) {
+  return `<svg width="34" height="14" aria-hidden="true"><line x1="2" y1="7" x2="32" y2="7" stroke="${info.cor}" stroke-width="3"
+    ${info.padrao ? `stroke-dasharray="${info.padrao}"` : ""}/></svg>`;
+}
+
+function desenharControlesCamadas() {
+  const alvo = document.getElementById("camadas");
+  alvo.innerHTML = Object.entries(dados.tipos).map(([tipo, info]) => `
+    <label class="flex items-center gap-2 cursor-pointer" style="min-height:2.75rem">
+      <input type="checkbox" checked data-tipo="${tipo}" class="w-5 h-5">
+      ${simbolo(tipo, info.cor)} ${amostraContorno(info)} <span class="font-semibold">${esc(info.nome)}</span></label>`).join("");
+  alvo.querySelectorAll("input").forEach((caixa) => caixa.addEventListener("change", () => {
+    const grupo = camadasPorTipo[caixa.dataset.tipo];
+    caixa.checked ? grupo.addTo(mapa) : mapa.removeLayer(grupo);
+    desenharLista();
+  }));
+}
+
+function mostrarDetalhe(props) {
+  const info = dados.tipos[props.tipo];
+  document.getElementById("detalhe").innerHTML = `
+    <div class="flex items-center gap-2">${simbolo(props.tipo, info.cor, 30)}<b class="text-xl">${esc(info.nome)}</b></div>
+    <p class="text-lg mt-1">Nível: <b>${esc(props.nivel_rotulo)}</b></p>
+    <p class="mt-2"><b>Por que está marcada:</b> ${esc(props.motivo)}</p>
+    <p class="mt-2 font-bold">O que fazer (orientação geral):</p>
+    <ul class="list-disc pl-5">${info.o_que_fazer.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+    <p class="mt-2"><b>Confirme com a fonte oficial:</b> ${esc(info.fonte_oficial)}.</p>
+    <p class="text-sm mt-2">Última atualização (simulada): ${formatarHora(props.atualizado_em)} · origem: <b>${esc(props.origem)}</b></p>
+    ${dados.orientacoes_revisadas_por_humano ? "" : '<p class="text-sm mt-1"><i>Orientações ainda em revisão pelo grupo.</i></p>'}`;
+}
+
+function centro(feicao) {
+  const pontos = feicao.geometry.coordinates[0].slice(0, -1);
+  return [pontos.reduce((s, p) => s + p[1], 0) / pontos.length, pontos.reduce((s, p) => s + p[0], 0) / pontos.length];
+}
+
+function desenharAreas() {
+  Object.values(camadasPorTipo).forEach((g) => mapa.removeLayer(g));
+  camadasPorTipo = {};
+  Object.keys(dados.tipos).forEach((tipo) => (camadasPorTipo[tipo] = L.layerGroup()));
+  dados.camadas.features.forEach((f) => {
+    const info = dados.tipos[f.properties.tipo];
+    const poligono = L.geoJSON(f, { style: { color: info.cor, weight: f.properties.nivel === "alto" ? 4 : 2.5,
+      dashArray: info.padrao, fillColor: info.cor, fillOpacity: OPACIDADE[f.properties.nivel] } });
+    const rotulo = L.marker(centro(f), { keyboard: true, title: `${info.nome}, nível ${f.properties.nivel_rotulo}`,
+      icon: L.divIcon({ className: "", iconSize: null, html: `<div style="display:flex;align-items:center;gap:2px;background:#fff;
+        border:2px solid ${info.cor};border-radius:999px;padding:1px 6px 1px 2px;font-weight:700;font-size:12px;color:#1F1F1F;
+        white-space:nowrap">${simbolo(f.properties.tipo, info.cor, 18)}${esc(f.properties.nivel_rotulo)}</div>` }) });
+    [poligono, rotulo].forEach((camada) => camada.on("click", () => mostrarDetalhe(f.properties)));
+    camadasPorTipo[f.properties.tipo].addLayer(poligono).addLayer(rotulo);
+  });
+  document.querySelectorAll("#camadas input").forEach((caixa) => { if (caixa.checked) camadasPorTipo[caixa.dataset.tipo].addTo(mapa); });
+  desenharLista();
+}
+
+function desenharLista() {
+  const ativos = new Set([...document.querySelectorAll("#camadas input:checked")].map((c) => c.dataset.tipo));
+  const ordem = { alto: 0, medio: 1, baixo: 2 };
+  const lista = dados.camadas.features.filter((f) => ativos.has(f.properties.tipo))
+    .sort((a, b) => ordem[a.properties.nivel] - ordem[b.properties.nivel]);
+  document.getElementById("lista-areas").innerHTML = lista.map((f, i) => `<li><button type="button" class="botao pequeno w-full justify-start"
+    data-i="${dados.camadas.features.indexOf(f)}">${simbolo(f.properties.tipo, dados.tipos[f.properties.tipo].cor, 18)}
+    ${esc(dados.tipos[f.properties.tipo].nome)} · ${esc(f.properties.nivel_rotulo)}</button></li>`).join("") || "<li>Nenhuma camada ligada.</li>";
+  document.querySelectorAll("#lista-areas button").forEach((b) => b.addEventListener("click", () => {
+    const f = dados.camadas.features[+b.dataset.i];
+    mapa.setView(centro(f), Math.max(mapa.getZoom(), 11));
+    mostrarDetalhe(f.properties);
+  }));
+}
+
+// Talhões do Sítio Demonstração (fictício), posicionados perto do centro da região escolhida, com o semáforo.
+async function desenharTalhoes(regiao) {
+  if (grupoTalhoes) mapa.removeLayer(grupoTalhoes);
+  grupoTalhoes = L.layerGroup().addTo(mapa);
+  const r = await chamarApi("/status");
+  if (!r.ok) return;
+  const formas = { Verde: "50%", Amarelo: "4px", Vermelho: "30%" };
+  r.dados.leituras.forEach((l, i) => {
+    const angulo = (i / r.dados.leituras.length) * 2 * Math.PI;
+    const posicao = [regiao.centro[0] + 0.035 * Math.sin(angulo), regiao.centro[1] + 0.045 * Math.cos(angulo)];
+    const e = ESTADOS[l.classe];
+    const cor = e ? `var(--${e.cor})` : "var(--cinza)";
+    const marcador = L.marker(posicao, { title: `${l.nome}: ${e ? e.rotulo : "Sem dados"}`, icon: L.divIcon({ className: "", iconSize: null,
+      html: `<div style="display:flex;align-items:center;gap:3px;background:#fff;border:2px solid #1F1F1F;border-radius:999px;padding:1px 6px 1px 1px;
+        font-size:12px;font-weight:700;white-space:nowrap"><span style="width:16px;height:16px;background:${cor};border-radius:${e ? formas[l.classe] : "50%"};
+        ${e ? "" : "border:2px dashed #4A4640;background:#ECEAE5;"}display:inline-block"></span>${esc(l.id)}</div>` }) });
+    marcador.bindPopup(`<b>${esc(l.nome)}</b> (${esc(nomeEspecie(l.especie))})<br>${e ? e.rotulo : "Sem dados atualizados"}<br>
+      <a href="${linkCom("painel.html", { talhao: l.id })}">Abrir no painel</a><br><small>Propriedade fictícia, posição ilustrativa.</small>`);
+    grupoTalhoes.addLayer(marcador);
+  });
+}
+
+async function selecionarRegiao(id, { centralizar = true } = {}) {
+  document.querySelectorAll("#regioes button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.id === id));
+  document.getElementById("detalhe").innerHTML = esqueleto("6rem");
+  const r = await chamarApi("/riscos/" + encodeURIComponent(id)); // só o identificador da região, nunca coordenadas
+  if (!r.ok) { document.getElementById("detalhe").innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
+  const primeiraVez = !dados;
+  dados = r.dados;
+  document.getElementById("aviso-riscos").innerHTML = `<b>${esc(dados.aviso.split(".")[0])}.</b> ${esc(dados.aviso.split(".").slice(1).join(".").trim())}`;
+  if (primeiraVez) desenharControlesCamadas();
+  if (centralizar) mapa.setView(dados.regiao.centro, dados.regiao.zoom);
+  desenharAreas();
+  desenharTalhoes(dados.regiao);
+  document.getElementById("detalhe").innerHTML = `<p><b>${esc(dados.regiao.nome)}</b>: ${esc(dados.regiao.municipios.join(", "))}
+    (centro aproximado). ${dados.camadas.features.length} áreas simuladas. Toque numa área para ver os detalhes.</p>`;
+}
+
+function distanciaKm([lat1, lng1], [lat2, lng2]) {
+  const rad = (x) => (x * Math.PI) / 180, R = 6371;
+  const a = Math.sin(rad(lat2 - lat1) / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lng2 - lng1) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function usarLocalizacao() {
+  const situacao = document.getElementById("situacao-local");
+  situacao.hidden = false;
+  if (!("geolocation" in navigator)) { situacao.textContent = "Este navegador não informa a localização. Escolha uma região acima."; return; }
+  situacao.textContent = "Pedindo a localização ao seu aparelho…";
+  navigator.geolocation.getCurrentPosition((posicao) => {
+    // A coordenada fica só nesta função e no marcador do mapa: não vai para a API, para logs nem para armazenamento.
+    const local = [posicao.coords.latitude, posicao.coords.longitude];
+    const ordenadas = regioes.map((r) => ({ r, d: distanciaKm(local, r.centro) })).sort((a, b) => a.d - b.d);
+    const { r: maisProxima, d } = ordenadas[0];
+    if (marcadorLocal) mapa.removeLayer(marcadorLocal);
+    marcadorLocal = L.circleMarker(local, { radius: 8, color: "#1565C0", weight: 3, fillOpacity: 0.6 })
+      .bindTooltip("Você (só neste aparelho)").addTo(mapa);
+    if (d <= maisProxima.raio_km) {
+      situacao.textContent = `Você está na área de demonstração “${maisProxima.nome}”.`;
+      selecionarRegiao(maisProxima.id, { centralizar: false });
+      mapa.setView(local, maisProxima.zoom);
+    } else {
+      situacao.textContent = `Você está fora das regiões de demonstração. Mostrando a mais próxima: “${maisProxima.nome}”, a cerca de ${Math.round(d)} km.`;
+      selecionarRegiao(maisProxima.id);
+    }
+  }, (erro) => {
+    situacao.textContent = erro.code === 1 ? "Você não permitiu o uso da localização. Tudo bem: escolha uma região acima."
+      : "Não foi possível obter a localização agora. Escolha uma região acima.";
+  }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  if (typeof L === "undefined") {
+    document.getElementById("mapa").innerHTML = '<p class="p-4">Não foi possível carregar o mapa (biblioteca Leaflet). Confira a internet.</p>';
+    return;
+  }
+  const r = await chamarApi("/riscos/regioes");
+  if (!r.ok) { document.getElementById("detalhe").innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
+  regioes = r.dados.regioes;
+  // O mapa nasce já na região inicial: evita baixar imagens de uma vista que seria trocada em seguida.
+  const pedida = regioes.find((x) => x.id === parametroUrl("regiao")) || regioes[0];
+  mapa = L.map("mapa", { scrollWheelZoom: false }).setView(pedida.centro, pedida.zoom);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a>' }).addTo(mapa);
+  document.getElementById("regioes").innerHTML = regioes.map((x) =>
+    `<button type="button" class="botao" data-id="${esc(x.id)}" aria-pressed="false">${esc(x.nome)}</button>`).join("");
+  document.querySelectorAll("#regioes button").forEach((b) => b.addEventListener("click", () => selecionarRegiao(b.dataset.id)));
+  document.getElementById("localizar").addEventListener("click", usarLocalizacao);
+  const inicial = parametroUrl("regiao");
+  selecionarRegiao(regioes.some((x) => x.id === inicial) ? inicial : regioes[0].id);
+});
+</script>
+</body>
+</html>

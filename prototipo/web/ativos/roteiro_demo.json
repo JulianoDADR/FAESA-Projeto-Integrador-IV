@@ -1,5 +1,5 @@
 {
-  "_comentario": "Roteiro do modo apresentação (index.html). Edite textos, ordem e durações aqui, sem mexer no código. Tipos: abertura, cenario, sem_dados, talhoes, agricultor, fim. Em 'cenario', 'simular_falha_llm': true mostra a mensagem-padrão.",
+  "_comentario": "Roteiro do modo apresentação (index.html). Edite textos, ordem e durações aqui, sem mexer no código. Tipos: abertura, cenario, sem_dados, talhoes, mapa, agricultor, fim. Em 'cenario', 'simular_falha_llm': true mostra a mensagem-padrão.",
   "titulo": "AgroAnálise em 1 minuto",
   "passos": [
     {
@@ -47,6 +47,13 @@
       "tipo": "talhoes",
       "titulo": "A propriedade inteira",
       "legenda": "Oito pontos de monitoramento ao vivo, com os que pedem mais cuidado primeiro.",
+      "duracao_s": 9
+    },
+    {
+      "tipo": "mapa",
+      "titulo": "Riscos da região (demonstrativo)",
+      "legenda": "Alagamento, chuva forte, incêndio, deslizamento e pragas, com orientações gerais e a fonte oficial para confirmar. Dados simulados; a localização nunca sai do aparelho.",
+      "regiao": "serrana",
       "duracao_s": 9
     },
     {

@@ -164,6 +164,19 @@ class Apresentacao {
         const fala = new SpeechSynthesisUtterance(`${l.classe ? ESTADOS[l.classe].rotulo : "Sem dados atualizados"}. ${l.mensagem}`);
         fala.lang = "pt-BR"; speechSynthesis.speak(fala);
       });
+    } else if (passo.tipo === "mapa") {
+      const r = await chamarApi("/riscos/" + encodeURIComponent(passo.regiao || "serrana"));
+      if (!atual()) return;
+      if (!r.ok) { palco.innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
+      const contagem = {};
+      r.dados.camadas.features.forEach((f) => { const t = f.properties.tipo;
+        contagem[t] = contagem[t] || { baixo: 0, medio: 0, alto: 0 }; contagem[t][f.properties.nivel]++; });
+      palco.innerHTML = `<div class="erro-caixa mb-3"><b>${esc(r.dados.aviso)}</b></div>
+        <p class="text-lg font-bold mb-2">${esc(r.dados.regiao.nome)}</p>
+        <div class="grid gap-2 sm:grid-cols-2">${Object.entries(r.dados.tipos).map(([t, info]) => `<div class="cartao p-3"
+          style="border-left:8px solid ${info.cor}"><b>${esc(info.nome)}</b><br><span class="text-sm">Áreas: alto ${contagem[t]?.alto || 0},
+          médio ${contagem[t]?.medio || 0}, baixo ${contagem[t]?.baixo || 0}</span><br><span class="text-sm">Fonte oficial: ${esc(info.fonte_oficial)}</span></div>`).join("")}</div>
+        <a class="botao text-xl mt-3" href="mapa.html?regiao=${encodeURIComponent(r.dados.regiao.id)}">Abrir o mapa</a>`;
     } else if (passo.tipo === "fim") {
       palco.innerHTML = `<ul class="space-y-2 text-xl">${(passo.itens || []).map((i) => `<li class="cartao">✓ ${esc(i)}</li>`).join("")}</ul>`;
     } else {

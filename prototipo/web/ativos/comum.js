@@ -2,7 +2,7 @@
 // a visão (agricultor/técnico) e o talhão escolhido vivem só na URL (?visao=, ?talhao=).
 const PAGINAS = [
   ["index.html", "Início"], ["agricultor.html", "Agricultor"], ["talhoes.html", "Talhões"], ["painel.html", "Painel"],
-  ["historico.html", "Histórico"], ["ia.html", "IA ao vivo"], ["avaliacao.html", "Avaliação"], ["sobre.html", "Sobre e limites"],
+  ["historico.html", "Histórico"], ["mapa.html", "Mapa de riscos"], ["ia.html", "IA ao vivo"], ["avaliacao.html", "Avaliação"], ["sobre.html", "Sobre e limites"],
 ];
 
 // Cada estado tem cor + palavra + ícone + FORMA própria (círculo, triângulo, octógono), para quem não distingue cores.
