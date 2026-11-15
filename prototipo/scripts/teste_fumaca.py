@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 import httpx
 
 PAGINAS = ["index.html", "agricultor.html", "talhoes.html", "painel.html", "historico.html", "ia.html",
-           "avaliacao.html", "sobre.html"]
+           "avaliacao.html", "sobre.html", "mapa.html"]
 LEITURA_OK = {"especie": "Arabica", "umidade_solo": 55, "temperatura": 21, "umidade_ar": 72}
 
 
@@ -76,6 +76,16 @@ def main(argv=None):
     d = cliente.get("/disponibilidade?horas=72")
     v.checar("GET /disponibilidade", d.status_code == 200,
              f"disponibilidade 72 h = {d.json().get('disponibilidade_geral') if d.status_code == 200 else '-'}")
+    regioes = cliente.get("/riscos/regioes")
+    lista_regioes = regioes.json().get("regioes", []) if regioes.status_code == 200 else []
+    v.checar("GET /riscos/regioes", regioes.status_code == 200 and len(lista_regioes) >= 2,
+             f"{len(lista_regioes)} regiões")
+    riscos = cliente.get("/riscos/serrana")
+    dados_riscos = riscos.json() if riscos.status_code == 200 else {}
+    v.checar("GET /riscos/serrana (GeoJSON simulado)",
+             riscos.status_code == 200 and dados_riscos.get("origem_dados") == "simulado"
+             and dados_riscos.get("camadas", {}).get("type") == "FeatureCollection"
+             and bool(dados_riscos.get("camadas", {}).get("features")))
 
     c = cliente.post("/classificar", json=LEITURA_OK)
     v.checar("POST /classificar válido", c.status_code == 200 and c.json().get("classe") in ("Verde", "Amarelo", "Vermelho"),

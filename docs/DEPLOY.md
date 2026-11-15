@@ -80,13 +80,14 @@ Dentro de `prototipo/`, com o venv:
 .venv\Scripts\python scripts\teste_fumaca.py --url https://<sua-url>
 ```
 
-Ele confere `/saude`, cabeçalhos de segurança (inclusive HSTS em https), as 8 páginas, `/metricas`, `/status`,
-`/historico`, `/disponibilidade`, `/classificar` (válido, fora de faixa e com texto livre), a recusa de
-`/leituras` sem token e o limite de tamanho. Com `--gravar` (e `TOKEN_DISPOSITIVO` no ambiente) também envia uma
-leitura simulada. Sai com código 1 se algo falhar. Cole a saída em `docs/testes.md`.
+Ele confere `/saude`, cabeçalhos de segurança (inclusive HSTS em https), as 9 páginas (incluindo `mapa.html`),
+`/metricas`, `/status`, `/historico`, `/disponibilidade`, `/riscos/regioes`, `/riscos/{regiao_id}`,
+`/classificar` (válido, fora de faixa e com texto livre), a recusa de `/leituras` sem token e o limite de tamanho.
+Com `--gravar` (e `TOKEN_DISPOSITIVO` no ambiente) também envia uma leitura simulada. Sai com código 1 se algo
+falhar. Cole a saída em `docs/testes.md`.
 
-Na simulação local do deploy (cópia sem `.venv` e sem o `.pkl`, modelo treinado no "build", o mesmo comando do
-`Dockerfile` e as variáveis da tabela acima), o resultado foi **23 de 23 verificações OK**.
+Na última execução local (http, sem `--gravar`), o resultado foi **24 de 24 verificações OK**. Na URL pública, com
+https e `--gravar`, o total é maior (HSTS e as duas verificações de gravação); use o número da saída real.
 
 ## 6. Gateway apontando para a URL pública
 

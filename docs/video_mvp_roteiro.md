@@ -25,7 +25,7 @@ do C3 que ela atende. Responsável sugerido: Guilherme (Quadro 7). Tudo o que ap
 | 8 | 4:00–4:40 | `ia.html`: classificar, mostrar proporções e selo; **Simular falha do LLM** | “Quem decide a cor é o classificador. O LLM só explica. Se o LLM cair, a mensagem-padrão entra e o semáforo continua.” |
 | 9 | 4:40–5:15 | `avaliacao.html` e `docs/avaliacao/llm.md` | “Com o ajuste para a classe crítica, a revocação do Vermelho foi de 0,81 para 0,92, com mais falsos alarmes. Os dados são simulados: isto valida o pipeline, não a lavoura. Na avaliação do LLM, nenhuma tentativa de injeção chegou ao modelo, e o filtro bloqueou 14 de 15 respostas ruins.” |
 | 10 | 5:15–5:35 | Terminal `pytest -q` e a aba Actions do GitHub | “São [205] testes automatizados, rodando a cada envio ao GitHub.” |
-| 11 | 5:35–5:50 | Terminal `scripts/teste_fumaca.py --url <url>` | “O teste de fumaça confere a URL pública: [23 de 23] verificações.” |
+| 11 | 5:35–5:50 | Terminal `scripts/teste_fumaca.py --url <url>` | “O teste de fumaça confere a URL pública: [número real de verificações] verificações.” |
 | 12 | 5:50–6:20 | `sobre.html` e `docs/usabilidade/indicadores.md` | “O sistema não aciona irrigação nem recomenda produto ou dose; a decisão é do produtor. [Resultado do teste com pessoas.] Próximos passos: montar e calibrar o sensor e validar as faixas com orientação técnica.” |
 
 Os números entre colchetes devem ser conferidos na hora da gravação.
