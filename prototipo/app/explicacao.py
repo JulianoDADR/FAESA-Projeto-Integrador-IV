@@ -8,6 +8,9 @@ import logging
 import os
 import re
 import time
+from collections import deque
+from datetime import datetime, timezone
+from threading import Lock
 
 import httpx
 
@@ -34,6 +37,66 @@ INSTRUCAO_SISTEMA = (
 )
 
 _cache = {}
+
+# Teto de chamadas ao Groq (protege a cota do plano gratuito; conferir os limites vigentes do plano no console).
+# Ao estourar, a mensagem-padrao e usada: o semaforo nunca depende do LLM.
+TETO_POR_MINUTO_PADRAO = 20
+TETO_POR_DIA_PADRAO = 1000
+_trava = Lock()
+_chamadas_ultimo_minuto = deque()
+_uso = {"dia": None, "chamadas": 0, "tokens_entrada": 0, "tokens_saida": 0, "falhas": 0, "rejeitadas": 0,
+        "teto_atingido": 0}
+
+
+def _teto(nome, padrao):
+    try:
+        return int(os.getenv(nome, padrao))
+    except ValueError:
+        return padrao
+
+
+def _virar_dia():
+    hoje = datetime.now(timezone.utc).date().isoformat()
+    if _uso["dia"] != hoje:
+        _uso.update({"dia": hoje, "chamadas": 0, "tokens_entrada": 0, "tokens_saida": 0, "falhas": 0,
+                     "rejeitadas": 0, "teto_atingido": 0})
+
+
+def reservar_chamada(relogio=time.monotonic):
+    """Conta uma chamada se couber nos tetos. Devolve False quando o teto do minuto ou do dia foi atingido."""
+    with _trava:
+        _virar_dia()
+        agora = relogio()
+        while _chamadas_ultimo_minuto and agora - _chamadas_ultimo_minuto[0] >= 60:
+            _chamadas_ultimo_minuto.popleft()
+        if (len(_chamadas_ultimo_minuto) >= _teto("GROQ_MAX_POR_MINUTO", TETO_POR_MINUTO_PADRAO)
+                or _uso["chamadas"] >= _teto("GROQ_MAX_POR_DIA", TETO_POR_DIA_PADRAO)):
+            _uso["teto_atingido"] += 1
+            return False
+        _chamadas_ultimo_minuto.append(agora)
+        _uso["chamadas"] += 1
+        return True
+
+
+def _anotar(chave, quantidade=1):
+    with _trava:
+        _virar_dia()
+        _uso[chave] += quantidade or 0
+
+
+def uso_do_llm():
+    """Uso do dia (UTC): chamadas, tokens, falhas, saidas rejeitadas e vezes em que o teto segurou. Sem segredos."""
+    with _trava:
+        _virar_dia()
+        return dict(_uso) | {"teto_por_minuto": _teto("GROQ_MAX_POR_MINUTO", TETO_POR_MINUTO_PADRAO),
+                             "teto_por_dia": _teto("GROQ_MAX_POR_DIA", TETO_POR_DIA_PADRAO)}
+
+
+def zerar_uso():
+    with _trava:
+        _chamadas_ultimo_minuto.clear()
+        _uso["dia"] = None
+        _virar_dia()
 
 
 def _faixa(valor, passo):
@@ -75,6 +138,8 @@ def _chamar_llm(mensagens):
     resposta.raise_for_status()
     dados = resposta.json()
     uso = dados.get("usage", {})
+    _anotar("tokens_entrada", uso.get("prompt_tokens"))
+    _anotar("tokens_saida", uso.get("completion_tokens"))
     registro.info("chamada LLM ok: %.2fs, tokens entrada=%s saida=%s", time.monotonic() - inicio,
                   uso.get("prompt_tokens"), uso.get("completion_tokens"))
     return dados["choices"][0]["message"]["content"]
@@ -122,13 +187,18 @@ def gerar_mensagem(classe, leitura, forcar_falha=False):
     chave = chave_cache(classe, leitura)
     if chave in _cache:
         return _cache[chave], "llm"
+    if not reservar_chamada():
+        registro.warning("Teto de chamadas ao LLM atingido; usando mensagem-padrão.")
+        return padrao
     try:
         texto = _chamar_llm(montar_mensagens(classe, leitura))
     except Exception as erro:  # rede, limite do plano, timeout, chave invalida: o semaforo segue sem o LLM
+        _anotar("falhas")
         registro.warning("LLM indisponível, usando mensagem-padrão: %s", type(erro).__name__)
         return padrao
     ok, motivo = validar_saida(texto, classe)
     if not ok:
+        _anotar("rejeitadas")
         registro.warning("saída do LLM rejeitada (%s), usando mensagem-padrão", motivo)
         return padrao
     _cache[chave] = texto.strip()

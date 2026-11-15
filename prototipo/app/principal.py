@@ -1,32 +1,30 @@
 """API do AgroAnalise (prototipo, dados SIMULADOS). Tambem serve as paginas de ../web.
 
-Subir: uvicorn app.principal:app
+Subir: uvicorn app.principal:app            (no deploy: --host 0.0.0.0 --port $PORT --proxy-headers)
 """
+import asyncio
+import contextlib
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query, Request
+from fastapi import APIRouter, FastAPI, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import banco, classificador, explicacao, faixas, fontes, indicadores, ingestao, servico
+from app import (alimentador, banco, classificador, explicacao, faixas, fontes, indicadores, ingestao, seguranca,
+                 servico)
 from app.validacao import ErroValidacao
 
 RAIZ = Path(__file__).resolve().parent.parent
 load_dotenv(RAIZ / ".env")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-
-@asynccontextmanager
-async def ciclo_de_vida(_app):
-    banco.configurar()  # cria as tabelas se ainda nao existirem (migracao simples)
-    yield
-
-
-app = FastAPI(title="AgroAnálise (protótipo)", description="Dados simulados, modo demonstração.", lifespan=ciclo_de_vida)
+registro = logging.getLogger("agroanalise.api")
 
 CENARIOS = [
     {"id": "ideal", "nome": "Ideal", "especie": "Arabica", "umidade_solo": 55, "temperatura": 21, "umidade_ar": 72},
@@ -35,18 +33,31 @@ CENARIOS = [
     {"id": "muito_seco", "nome": "Solo muito seco", "especie": "Conilon", "umidade_solo": 12, "temperatura": 31, "umidade_ar": 50},
     {"id": "sem_dados", "nome": "Sem dados", "especie": "Arabica", "umidade_solo": None, "temperatura": None, "umidade_ar": None},
 ]
+SIMULADOR = fontes.FonteSimulada()
+rotas = APIRouter()
 
 
-@app.get("/saude")
+def _falha_llm_pedida(simular_falha_llm):
+    """?simular_falha_llm=true so vale no modo demonstracao. Devolve (forcar_falha, resposta_de_erro)."""
+    if simular_falha_llm and not seguranca.modo_demo():
+        return False, seguranca.erro_so_no_modo_demo()
+    return simular_falha_llm, None
+
+
+@rotas.get("/saude")
 def saude():
     return {"estado": "ok", "modelo_carregado": classificador.modelo_disponivel(),
-            "llm_configurado": explicacao.llm_configurado(), "modo_demonstracao": True,
+            "llm_configurado": explicacao.llm_configurado(), "llm_uso": explicacao.uso_do_llm(),
+            "modo_demonstracao": True, "modo_demo": seguranca.modo_demo(),
             "fonte_leituras": fontes.fonte_ativa().nome, "banco": banco.descrever_url(),
-            "recebimento_leituras_ligado": ingestao.token_configurado()}
+            "recebimento_leituras_ligado": ingestao.token_configurado(), "alimentador_demo": alimentador.ligado()}
 
 
-@app.post("/classificar")
+@rotas.post("/classificar")
 async def classificar(requisicao: Request, simular_falha_llm: bool = False):
+    forcar_falha, erro = _falha_llm_pedida(simular_falha_llm)
+    if erro:
+        return erro
     try:
         corpo = await requisicao.json()
     except ValueError:
@@ -54,18 +65,18 @@ async def classificar(requisicao: Request, simular_falha_llm: bool = False):
     try:
         # A chamada ao LLM e sincrona (httpx, ate 5 s): roda no pool de threads para nao travar o servidor.
         # Mantemos a rota async para ler o JSON manualmente e devolver erros em portugues simples.
-        return await run_in_threadpool(servico.avaliar, corpo, simular_falha_llm)
-    except ErroValidacao as erro:
-        return JSONResponse(status_code=422, content={"erros": erro.erros})
+        return await run_in_threadpool(servico.avaliar, corpo, forcar_falha)
+    except ErroValidacao as erro_validacao:
+        return JSONResponse(status_code=422, content={"erros": erro_validacao.erros})
 
 
-@app.get("/faixas")
+@rotas.get("/faixas")
 def obter_faixas():
     """Faixas provisorias, limites fisicos e intervalo de treino (a interface limita os controles por aqui)."""
     return faixas.carregar_faixas()
 
 
-@app.get("/metricas")
+@rotas.get("/metricas")
 def metricas():
     caminho = RAIZ / "ml" / "saida" / "metricas.json"
     if not caminho.exists():
@@ -74,25 +85,25 @@ def metricas():
     return json.loads(caminho.read_text(encoding="utf-8"))
 
 
-@app.get("/cenarios")
+@rotas.get("/cenarios")
 def cenarios():
     return CENARIOS
-
-
-SIMULADOR = fontes.FonteSimulada()
 
 
 def _talhao_existe(talhao):
     return any(t["id"] == talhao for t in fontes.fonte_ativa().talhoes())
 
 
-@app.get("/talhoes")
+@rotas.get("/talhoes")
 def talhoes():
     fonte = fontes.fonte_ativa()
     return {"fonte": fonte.nome, "origem_dados": fonte.origem, "talhoes": fonte.talhoes()}
 
 
 def _montar_status(fonte, talhao, passo, simular_falha_llm):
+    forcar_falha, erro = _falha_llm_pedida(simular_falha_llm)
+    if erro:
+        return erro
     if talhao is not None and not _talhao_existe(talhao):
         return JSONResponse(status_code=404, content={"erros": [f"Talhão desconhecido: {talhao}."]})
     simulada = isinstance(fonte, fontes.FonteSimulada)
@@ -101,7 +112,7 @@ def _montar_status(fonte, talhao, passo, simular_falha_llm):
     nomes = {t["id"]: t for t in fonte.talhoes()}
     corpo = {"fonte": fonte.nome, "origem_dados": fonte.origem, "propriedade": fontes.PROPRIEDADE,
              "modo_demonstracao": True, "gerado_em": servico.agora(), "passo": passo,
-             "leituras": [nomes[l["talhao_id"]] | servico.avaliar_leitura_de_fonte(l, simular_falha_llm)
+             "leituras": [nomes[l["talhao_id"]] | servico.avaliar_leitura_de_fonte(l, forcar_falha)
                           for l in leituras]}
     if simulada:
         corpo |= {"passo_relogio": fontes.passo_atual(), "hora_simulada": fontes.hora_simulada(passo),
@@ -111,7 +122,7 @@ def _montar_status(fonte, talhao, passo, simular_falha_llm):
     return corpo
 
 
-@app.get("/status")
+@rotas.get("/status")
 def status(talhao: str | None = None, passo: int | None = Query(None, ge=0), simular_falha_llm: bool = False):
     """Estado atual de cada talhao, vindo da fonte ativa (FONTE_LEITURAS). As paginas usam esta rota.
 
@@ -120,14 +131,16 @@ def status(talhao: str | None = None, passo: int | None = Query(None, ge=0), sim
     return _montar_status(fontes.fonte_ativa(), talhao, passo, simular_falha_llm)
 
 
-@app.get("/simulador/leituras")
+@rotas.get("/simulador/leituras")
 def simulador_leituras(passo: int | None = Query(None, ge=0), talhao: str | None = None,
                        simular_falha_llm: bool = False):
-    """Sempre o simulador (dados SIMULADOS), mesmo quando a fonte ativa e o banco."""
+    """Sempre o simulador (dados SIMULADOS), mesmo quando a fonte ativa e o banco. So no modo demonstracao."""
+    if not seguranca.modo_demo():
+        return seguranca.erro_so_no_modo_demo()
     return _montar_status(SIMULADOR, talhao, passo, simular_falha_llm)
 
 
-@app.post("/leituras", status_code=201)
+@rotas.post("/leituras", status_code=201)
 async def receber_leitura(requisicao: Request):
     """Recebe uma leitura do gateway (token de dispositivo). Idempotente por (talhao, instante de coleta)."""
     try:
@@ -143,13 +156,13 @@ async def receber_leitura(requisicao: Request):
         return JSONResponse(status_code=erro.status, content={"erros": erro.erros}, headers=cabecalhos)
 
 
-@app.get("/disponibilidade")
+@rotas.get("/disponibilidade")
 def obter_disponibilidade(horas: int = Query(72, ge=1, le=24 * 30)):
     """Indicador do relatorio: leituras validas recebidas / esperadas na janela (meta >= 95% em 72 h)."""
     return indicadores.disponibilidade(horas)
 
 
-@app.get("/historico")
+@rotas.get("/historico")
 def historico(talhao: str = "A", horas: int = Query(24, ge=2, le=72)):
     """Uma leitura por hora da fonte ativa (simulada: hora simulada), classificada pelo modelo (sem LLM)."""
     if not _talhao_existe(talhao):
@@ -164,5 +177,46 @@ def historico(talhao: str = "A", horas: int = Query(24, ge=2, le=72)):
     return pontos
 
 
-# Paginas estaticas por ultimo, para nao esconder as rotas da API.
-app.mount("/", StaticFiles(directory=RAIZ / "web", html=True), name="web")
+@asynccontextmanager
+async def ciclo_de_vida(_app):
+    banco.configurar()  # cria as tabelas se ainda nao existirem (migracao simples)
+    if os.getenv("SEMEAR_SE_VAZIO", "").strip().lower() in ("1", "true", "sim") and banco.contar_leituras() == 0:
+        from app.semear import semear
+        registro.info("Banco vazio: semente de leituras simuladas: %s", await run_in_threadpool(semear, 72))
+    tarefa = asyncio.create_task(alimentador.laco()) if alimentador.ligado() else None
+    yield
+    if tarefa:
+        tarefa.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await tarefa
+
+
+def criar_app():
+    """Monta o app. As protecoes dependem de variaveis de ambiente lidas aqui (CORS) ou a cada pedido (o resto)."""
+    aplicacao = FastAPI(title="AgroAnálise (protótipo)", description="Dados simulados, modo demonstração.",
+                        lifespan=ciclo_de_vida)
+    aplicacao.state.limitador = seguranca.LimitadorDeTaxa()
+
+    @aplicacao.middleware("http")
+    async def protecoes(requisicao: Request, chamar_proximo):
+        ip = requisicao.client.host if requisicao.client else "desconhecido"
+        permitido, espera = requisicao.app.state.limitador.permitir(ip, requisicao.url.path, requisicao.method)
+        if not permitido:
+            resposta = JSONResponse(status_code=429, headers={"Retry-After": str(espera)}, content={"erros": [
+                f"Muitos pedidos seguidos. Espere {espera} s e tente de novo."]})
+        else:
+            resposta = await chamar_proximo(requisicao)
+        return seguranca.cabecalhos_de_seguranca(resposta, requisicao.url.scheme == "https")
+
+    origens = seguranca.origens_permitidas()
+    if origens:  # sem a variavel, so a propria origem (as paginas sao servidas pela API)
+        aplicacao.add_middleware(CORSMiddleware, allow_origins=origens, allow_methods=["GET", "POST"],
+                                 allow_headers=["Authorization", "Content-Type"])
+    aplicacao.add_middleware(seguranca.LimiteDeCorpo)
+    aplicacao.include_router(rotas)
+    # Paginas estaticas por ultimo, para nao esconder as rotas da API.
+    aplicacao.mount("/", StaticFiles(directory=RAIZ / "web", html=True), name="web")
+    return aplicacao
+
+
+app = criar_app()

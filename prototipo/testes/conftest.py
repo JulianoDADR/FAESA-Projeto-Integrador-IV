@@ -15,6 +15,18 @@ def isolar_llm(monkeypatch):
     """Nenhum teste chama a rede: sem chave por padrao e cache limpo."""
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     explicacao.limpar_cache()
+    explicacao.zerar_uso()
+
+
+@pytest.fixture(autouse=True)
+def isolar_protecoes(monkeypatch):
+    """Modo demonstracao ligado por padrao nos testes (os que testam o desligado removem a variavel)
+    e limitador de requisicoes zerado a cada teste."""
+    from app import seguranca
+    monkeypatch.setenv("MODO_DEMO", "1")
+    for variavel in ("ORIGENS_PERMITIDAS", "ALIMENTADOR_DEMO", "SEMEAR_SE_VAZIO", "GROQ_MAX_POR_MINUTO", "GROQ_MAX_POR_DIA"):
+        monkeypatch.delenv(variavel, raising=False)
+    app.state.limitador = seguranca.LimitadorDeTaxa()
 
 
 @pytest.fixture(autouse=True)
