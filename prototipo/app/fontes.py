@@ -2,7 +2,10 @@
 
 - FonteDeLeituras: interface.
 - FonteSimulada: leituras SIMULADAS, deterministicas (mesmo passo => mesma leitura), sem estado no servidor.
-- FonteBanco: leituras gravadas pelo gateway (Etapa 4).
+- FonteBanco: leituras gravadas pelo gateway via POST /leituras. Leitura mais antiga que MINUTOS_DESATUALIZADO
+  vira "sem dados atualizados" (cinza, nunca cor de avaliacao; relatorio, secao 6.2).
+
+A fonte ativa vem de FONTE_LEITURAS ("simulada", padrao, ou "banco").
 
 O simulador anda em "passos": cada passo = 10 minutos de tempo simulado. O passo atual vem do relogio
 (um passo a cada SEGUNDOS_POR_PASSO segundos reais); a interface pode pedir outro passo para pausar ou acelerar.
@@ -10,8 +13,9 @@ O modelo e simples e so serve para demonstrar: o solo seca aos poucos e e repost
 ou chuva, que o sistema NAO aciona), a temperatura sobe a tarde, a umidade do ar cai com o calor e ha dias com chuva.
 """
 import math
+import os
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
@@ -21,6 +25,8 @@ PASSOS_POR_DIA = 24 * 60 // MINUTOS_POR_PASSO
 SEGUNDOS_POR_PASSO = 3
 
 PROPRIEDADE = "Sítio Demonstração (fictício)"
+FUSO_EXIBICAO = timezone(timedelta(hours=-3), "BRT")  # horario de Brasilia (sem horario de verao desde 2019)
+MINUTOS_DESATUALIZADO_PADRAO = 15
 
 # Parametros ilustrativos de cada ponto de monitoramento (nao representam lavouras reais).
 #   solo_topo/solo_fundo: umidade do solo logo apos a reposicao e no fim do ciclo de secagem
@@ -85,8 +91,7 @@ class FonteSimulada(FonteDeLeituras):
         self._por_id = {t["id"]: t for t in TALHOES}
 
     def talhoes(self):
-        return [{k: t[k] for k in ("id", "nome", "local", "especie")} | {"propriedade": PROPRIEDADE}
-                for t in TALHOES]
+        return _talhoes_cadastrados()
 
     def _ruido(self, indice, passo):
         return np.random.default_rng([self.semente, indice, passo]).normal(0, 1, 3)
@@ -107,7 +112,7 @@ class FonteSimulada(FonteDeLeituras):
         talhao = self._por_id[talhao_id]
         indice = TALHOES.index(talhao)
         base = {"talhao_id": talhao_id, "especie": talhao["especie"], "passo": passo,
-                "hora_simulada": hora_simulada(passo), "origem": self.origem}
+                "hora_simulada": hora_simulada(passo), "hora_leitura": hora_simulada(passo), "origem": self.origem}
         if self._sem_sinal(talhao, passo):
             return base | {"umidade_solo": None, "temperatura": None, "umidade_ar": None}
 
@@ -145,8 +150,102 @@ class FonteSimulada(FonteDeLeituras):
         return [self.leitura(talhao_id, passo - por_hora * (horas - 1 - i)) for i in range(horas)]
 
 
-_fonte_ativa = FonteSimulada()
+def _talhoes_cadastrados():
+    return [{k: t[k] for k in ("id", "nome", "local", "especie")} | {"propriedade": PROPRIEDADE} for t in TALHOES]
+
+
+class FonteBanco(FonteDeLeituras):
+    """Leituras gravadas pelo gateway. `relogio` pode ser trocado nos testes."""
+    nome = "banco"
+    origem = "banco"
+
+    def __init__(self, minutos_desatualizado=None, relogio=None):
+        self.minutos_desatualizado = minutos_desatualizado or float(
+            os.getenv("MINUTOS_DESATUALIZADO", MINUTOS_DESATUALIZADO_PADRAO))
+        self.relogio = relogio or (lambda: datetime.now(timezone.utc))
+
+    def talhoes(self):
+        return _talhoes_cadastrados()
+
+    @staticmethod
+    def _hora(instante):
+        return instante.astimezone(FUSO_EXIBICAO).strftime("%H:%M")
+
+    def _vazia(self, talhao_id, especie, ultima=None, desatualizada=False):
+        return {"talhao_id": talhao_id, "especie": especie, "passo": None, "hora_simulada": None,
+                "hora_leitura": self._hora(ultima.coletado_em) if ultima else None,
+                "coletado_em": ultima.coletado_em.isoformat() if ultima else None,
+                "origem": ultima.origem if ultima else "sem leitura", "desatualizada": desatualizada,
+                "umidade_solo": None, "temperatura": None, "umidade_ar": None}
+
+    def _como_dict(self, linha):
+        return {"talhao_id": linha.talhao_id, "especie": linha.especie, "passo": None, "hora_simulada": None,
+                "hora_leitura": self._hora(linha.coletado_em), "coletado_em": linha.coletado_em.isoformat(),
+                "origem": linha.origem, "desatualizada": False, "umidade_solo": linha.umidade_solo,
+                "temperatura": linha.temperatura, "umidade_ar": linha.umidade_ar}
+
+    def leituras(self, passo=None):
+        from sqlalchemy import select
+
+        from app import banco
+        limite = self.relogio() - timedelta(minutes=self.minutos_desatualizado)
+        resultado = []
+        with banco.sessao() as s:
+            for t in TALHOES:
+                ultima = s.scalars(select(banco.Leitura).where(banco.Leitura.talhao_id == t["id"], banco.Leitura.valida)
+                                   .order_by(banco.Leitura.coletado_em.desc()).limit(1)).first()
+                if ultima is None:
+                    resultado.append(self._vazia(t["id"], t["especie"]))
+                elif ultima.coletado_em < limite:
+                    resultado.append(self._vazia(t["id"], t["especie"], ultima, desatualizada=True))
+                else:
+                    resultado.append(self._como_dict(ultima))
+        return resultado
+
+    def historico(self, talhao_id, horas=24, passo=None):
+        """Uma leitura por hora (a ultima de cada hora); hora sem leitura vira ponto sem dados."""
+        from sqlalchemy import select
+
+        from app import banco
+        fim = self.relogio()
+        inicio = fim - timedelta(hours=horas)
+        especie = next(t["especie"] for t in TALHOES if t["id"] == talhao_id)
+        with banco.sessao() as s:
+            linhas = s.scalars(select(banco.Leitura).where(
+                banco.Leitura.talhao_id == talhao_id, banco.Leitura.valida, banco.Leitura.coletado_em > inicio,
+                banco.Leitura.coletado_em <= fim).order_by(banco.Leitura.coletado_em)).all()
+        pontos = []
+        for i in range(horas):
+            de, ate = inicio + timedelta(hours=i), inicio + timedelta(hours=i + 1)
+            dentro = [l for l in linhas if de < l.coletado_em <= ate]
+            if dentro:
+                pontos.append(self._como_dict(dentro[-1]))
+            else:
+                vazio = self._vazia(talhao_id, especie)
+                vazio["hora_leitura"] = self._hora(ate)
+                pontos.append(vazio)
+        return pontos
+
+
+_fonte_ativa = None
+
+
+def criar_fonte(nome=None):
+    nome = (nome or os.getenv("FONTE_LEITURAS") or "simulada").strip().lower()
+    if nome == "banco":
+        return FonteBanco()
+    if nome == "simulada":
+        return FonteSimulada()
+    raise ValueError(f"FONTE_LEITURAS desconhecida: {nome} (use 'simulada' ou 'banco')")
+
+
+def definir_fonte(fonte):
+    global _fonte_ativa
+    _fonte_ativa = fonte
 
 
 def fonte_ativa():
+    global _fonte_ativa
+    if _fonte_ativa is None:
+        _fonte_ativa = criar_fonte()
     return _fonte_ativa

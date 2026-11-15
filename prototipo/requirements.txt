@@ -7,3 +7,5 @@ joblib==1.6.0
 httpx==0.28.1
 pytest==9.2.0
 python-dotenv==1.2.4
+sqlalchemy==2.1.6
+pyserial==3.5

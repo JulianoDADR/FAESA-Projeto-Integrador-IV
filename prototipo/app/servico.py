@@ -44,8 +44,20 @@ def sem_dados():
             "atualizado_em": None}
 
 
+MENSAGEM_DESATUALIZADA = ("A última leitura deste ponto é antiga. Confira o sensor, o gateway e a internet. "
+                          "Nenhuma avaliação é mostrada até chegar uma leitura nova.")
+
+
 def avaliar_leitura_de_fonte(leitura, forcar_falha_llm=False):
-    """Leitura vinda de uma FonteDeLeituras: junta os dados brutos com a avaliacao (ou o estado sem dados)."""
+    """Leitura vinda de uma FonteDeLeituras: junta os dados brutos com a avaliacao (ou o estado sem dados).
+
+    `atualizado_em` e o instante da coleta quando a fonte informa (banco); no simulador, o instante da resposta.
+    """
+    coletado_em = leitura.get("coletado_em")
     if any(leitura.get(campo) is None for campo in CAMPOS):
-        return leitura | sem_dados()
-    return leitura | avaliar({c: leitura[c] for c in CAMPOS}, forcar_falha_llm) | {"origem_dados": leitura["origem"]}
+        vazio = sem_dados() | {"atualizado_em": coletado_em}
+        if leitura.get("desatualizada"):
+            vazio["mensagem"] = MENSAGEM_DESATUALIZADA
+        return leitura | vazio | {"origem_dados": leitura.get("origem", "sem leitura")}
+    avaliado = avaliar({c: leitura[c] for c in CAMPOS}, forcar_falha_llm)
+    return leitura | avaliado | {"origem_dados": leitura["origem"], "atualizado_em": coletado_em or avaliado["atualizado_em"]}

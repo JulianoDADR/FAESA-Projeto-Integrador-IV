@@ -17,6 +17,18 @@ def isolar_llm(monkeypatch):
     explicacao.limpar_cache()
 
 
+@pytest.fixture(autouse=True)
+def isolar_banco_e_fonte(tmp_path, monkeypatch):
+    """Cada teste usa um banco SQLite temporario e a fonte simulada (nunca o banco real em dados/)."""
+    from app import banco, fontes
+    for variavel in ("TOKEN_DISPOSITIVO", "FONTE_LEITURAS", "MINUTOS_DESATUALIZADO", "INTERVALO_LEITURA_MIN"):
+        monkeypatch.delenv(variavel, raising=False)
+    banco.configurar(f"sqlite:///{(tmp_path / 'teste.db').as_posix()}")
+    fontes.definir_fonte(None)
+    yield
+    fontes.definir_fonte(None)
+
+
 @pytest.fixture
 def cliente():
     return TestClient(app)
