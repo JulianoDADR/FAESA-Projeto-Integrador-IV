@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <meta name="description" content="Visão geral dos pontos de monitoramento do cafezal (dados simulados).">
+  <title>Talhões · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+  <script src="ativos/barra_zonas.js" defer></script>
+  <script src="ativos/simulador.js" defer></script>
+</head>
+<body>
+<main class="max-w-5xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-3xl font-extrabold">Talhões da propriedade</h1>
+    <p class="mt-1"><span id="propriedade">Sítio Demonstração (fictício)</span>: pontos de monitoramento com leituras <b>simuladas</b> ao vivo.
+      Os que pedem mais cuidado aparecem primeiro.</p>
+  </div>
+
+  <section class="cartao space-y-3" aria-label="Controles">
+    <div id="controles"></div>
+    <div class="flex flex-wrap gap-4">
+      <div><span id="rot-esp" class="font-semibold block mb-1">Espécie</span>
+        <div role="group" aria-labelledby="rot-esp" class="flex flex-wrap gap-1" id="filtro-especie"></div></div>
+      <div><span id="rot-est" class="font-semibold block mb-1">Estado</span>
+        <div role="group" aria-labelledby="rot-est" class="flex flex-wrap gap-1" id="filtro-estado"></div></div>
+    </div>
+  </section>
+
+  <p id="resumo" class="text-lg font-semibold" aria-live="polite"></p>
+  <div id="erro" class="erro-caixa" hidden></div>
+  <section id="grade" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Talhões"></section>
+
+  <p class="text-sm">Os pontos e a propriedade são fictícios. As barras mostram cada leitura contra a faixa provisória; a cor vem do classificador, que olha as três leituras juntas e pode divergir perto dos limites. O semáforo é um apoio: a decisão de manejo é sempre do produtor.</p>
+</main>
+
+<script>
+const FILTROS = {
+  especie: [["todas", "Todas"], ["Arabica", "Arábica"], ["Conilon", "Conilon"]],
+  estado: [["todos", "Todos"], ["Vermelho", "Ação crítica"], ["Amarelo", "Atenção"], ["Verde", "Ideal"], ["sem", "Sem dados"]],
+};
+const escolha = { especie: "todas", estado: "todos" };
+let ultimos = null, faixas = null;
+
+function montarFiltro(tipo) {
+  const alvo = document.getElementById("filtro-" + tipo);
+  alvo.innerHTML = FILTROS[tipo].map(([v, n]) => `<button type="button" class="botao pequeno" data-v="${v}" aria-pressed="${v === escolha[tipo]}">${n}</button>`).join("");
+  alvo.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    escolha[tipo] = b.dataset.v;
+    alvo.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    if (ultimos) desenhar(ultimos);
+  }));
+}
+
+function passaNoFiltro(l) {
+  if (escolha.especie !== "todas" && l.especie !== escolha.especie) return false;
+  if (escolha.estado === "todos") return true;
+  return escolha.estado === "sem" ? l.classe === null : l.classe === escolha.estado;
+}
+
+function cartao(l, instante) {
+  const e = ESTADOS[l.classe];
+  const titulo = e ? e.rotulo : "Sem dados atualizados";
+  return `<a class="cartao cartao-talhao ${e ? e.cor : "cinza"}" href="${linkCom("painel.html", { talhao: l.id })}"
+      aria-label="${esc(l.nome)}, ${esc(nomeEspecie(l.especie))}: ${titulo}. Abrir detalhe.">
+    <div class="flex items-start justify-between gap-2">
+      <div><div class="text-xl font-extrabold">${esc(l.nome)}</div>
+        <div class="text-sm">${esc(nomeEspecie(l.especie))} · ${esc(l.local)}</div></div>
+      <div class="semaforo mini" aria-hidden="true">${lampadas(l.classe)}</div>
+    </div>
+    <div class="estado ${e ? e.cor : "cinza"} mt-3 py-2 px-3"><div class="flex items-center gap-2">${ICONES[e ? e.icone : "semdados"]}
+      <span class="text-xl font-extrabold">${titulo}</span></div></div>
+    <div class="mt-3" data-barras></div>
+    <p class="text-sm mt-2">Leitura das ${esc(l.hora_simulada)} (hora simulada) · <span data-desde="${instante}">${tempoDesde(instante)}</span></p>
+  </a>`;
+}
+
+function desenhar(dados) {
+  const lista = dados.leituras.filter(passaNoFiltro)
+    .sort((a, b) => GRAVIDADE[a.classe] - GRAVIDADE[b.classe] || a.nome.localeCompare(b.nome));
+  const grade = document.getElementById("grade");
+  const instante = Date.now();
+  grade.innerHTML = lista.length ? lista.map((l) => cartao(l, instante)).join("")
+    : '<p class="cartao sm:col-span-2 lg:col-span-3">Nenhum talhão com esse filtro.</p>';
+  grade.querySelectorAll("[data-barras]").forEach((alvo, i) => desenharBarrasZonas(alvo, faixas, lista[i], { compacto: true }));
+  const conta = (c) => dados.leituras.filter((l) => l.classe === c).length;
+  const criticos = conta("Vermelho");
+  const resumo = `${criticos} em ação crítica, ${conta("Amarelo")} em atenção, ${conta("Verde")} ideais` +
+    (conta(null) ? `, ${conta(null)} sem dados` : "") + ".";
+  const anterior = document.getElementById("resumo").textContent;
+  document.getElementById("resumo").textContent = resumo;
+  if (anterior && anterior !== resumo && criticos) anunciar(resumo);
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  montarFiltro("especie"); montarFiltro("estado");
+  document.getElementById("grade").innerHTML = [1, 2, 3].map(() => `<div>${esqueleto("14rem")}</div>`).join("");
+  faixas = await carregarFaixas();
+  const simulador = new Simulador({
+    aoAtualizar: (d) => { ultimos = d; document.getElementById("erro").hidden = true;
+      document.getElementById("propriedade").textContent = d.propriedade; desenhar(d); relogio(d.hora_simulada); },
+    aoErrar: (r) => { const e = document.getElementById("erro"); e.hidden = false; e.textContent = r.erros[0]; },
+  });
+  const relogio = montarControlesSimulador(document.getElementById("controles"), simulador);
+  setInterval(() => document.querySelectorAll("[data-desde]").forEach((s) => (s.textContent = tempoDesde(+s.dataset.desde))), 1000);
+  simulador.iniciar();
+});
+</script>
+</body>
+</html>
