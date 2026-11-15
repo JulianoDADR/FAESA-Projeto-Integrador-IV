@@ -1,0 +1,26 @@
+{
+  "comando": "python ml/calcular_indicadores.py",
+  "gerado_em": "2026-11-15T21:24:44+00:00",
+  "planilha": "planilha_coleta.csv",
+  "metas": {
+    "adocao_autonoma": 0.7,
+    "clareza_4_ou_5": 0.8,
+    "disponibilidade_72h": 0.95,
+    "revocacao_vermelho": 0.9
+  },
+  "usabilidade": {
+    "participantes": 0,
+    "adocao_autonoma": null,
+    "clareza_4_ou_5": null,
+    "aviso": "sem participantes ainda"
+  },
+  "disponibilidade": {
+    "disponibilidade_72h": null,
+    "aviso": "não medida (rode com --url apontando para a API em operação)"
+  },
+  "revocacao": {
+    "revocacao_vermelho": 0.9222,
+    "origem_dados": "simulado",
+    "aviso": "Rótulos gerados por regras sobre as mesmas variáveis de entrada: este resultado valida o pipeline, não a eficácia agronômica em campo."
+  }
+}
