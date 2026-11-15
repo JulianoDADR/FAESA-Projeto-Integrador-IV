@@ -6,6 +6,6 @@ from pathlib import Path
 raiz = Path(__file__).resolve().parent
 if not (raiz / "ml" / "saida" / "modelo.pkl").exists():
     print("Modelo não encontrado: treinando...")
-    subprocess.run([sys.executable, str(raiz / "ml" / "treinar.py")], check=True, cwd=raiz)
+    subprocess.run([sys.executable, str(raiz / "ml" / "treinar.py"), "--salvar"], check=True, cwd=raiz)
 print("Abra http://localhost:8000")
 subprocess.run([sys.executable, "-m", "uvicorn", "app.principal:app", "--port", "8000"], cwd=raiz)

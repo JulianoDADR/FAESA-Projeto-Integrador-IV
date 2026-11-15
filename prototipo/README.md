@@ -11,12 +11,38 @@ o sistema usa mensagens-padrão e o semáforo continua funcionando.
 ```bash
 python -m venv .venv && .venv\Scripts\activate      # Windows (Linux/macOS: source .venv/bin/activate)
 pip install -r requirements.txt
-python ml/treinar.py                                # gera dataset, modelo.pkl e metricas.json
+python ml/treinar.py --salvar                       # gera dataset, modelo.pkl e metricas.json
 uvicorn app.principal:app                           # sobe API + páginas
 # abra http://localhost:8000
 ```
 
 Atalho: `python executar_demo.py` treina se faltar o modelo e sobe o servidor.
+
+Sem `--salvar`, `ml/treinar.py` só mostra as métricas e não sobrescreve os arquivos versionados.
+As faixas (limites físicos, intervalo de treino e faixas provisórias de rotulagem) ficam em `config/faixas.json`,
+lido pelo gerador do dataset, pela API (`GET /faixas`) e pela interface.
+
+## Classificador: números atuais (teste, 600 amostras simuladas)
+
+| Configuração | Revocação do Vermelho | Precisão do Vermelho | Acurácia | F1 macro |
+|---|---|---|---|---|
+| Árvore sem ajuste | 0,809 | 0,893 | 0,752 | 0,740 |
+| Só limiar conservador (0,15) | 0,918 | 0,792 | 0,742 | 0,707 |
+| **Peso 3 para o Vermelho (modelo usado)** | **0,922** | **0,817** | **0,760** | **0,732** |
+| Teto de referência: a própria regra sem ruído | 0,911 | 0,893 | 0,818 | 0,803 |
+| Linha de base (classe majoritária) | 1,000 | 0,428 | 0,428 | 0,200 |
+
+- A configuração foi escolhida por **validação cruzada (k=5) só no treino** (maior F1 macro entre as que atingem
+  revocação do Vermelho ≥ 0,90); o teste foi usado uma única vez, para relatar. A meta de 0,90 foi atingida, com
+  custo: mais falsos alarmes (precisão do Vermelho caiu de 0,893 para 0,817; revocação do Amarelo de 0,546 para 0,434).
+- O **teto de referência** mostra que ~0,82 é o máximo esperável de acurácia: os rótulos têm ruído de medição que
+  nenhum modelo recupera. A regra escrita pelo grupo, sem ML, ainda supera a árvore.
+- **O ML aqui valida o pipeline, não a eficácia agronômica em campo.** Os rótulos vêm de regras sobre as mesmas
+  variáveis de entrada.
+- As barras de "proporção" na página de IA são a fração (ponderada pelo peso do Vermelho) de amostras de treino
+  parecidas em cada classe. Não são confiança nem certeza.
+- O `modelo.pkl` continua versionado até o deploy; no deploy ele será gerado no build (`python ml/treinar.py --salvar`),
+  para não amarrar o binário à versão do scikit-learn.
 
 ## LLM (opcional)
 
@@ -34,7 +60,7 @@ Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
 
 ## Rotas
 
-`GET /saude` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` · `GET /cenarios` · `GET /historico`
+`GET /saude` · `GET /faixas` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` · `GET /cenarios` · `GET /historico`
 
 Páginas: `index`, `painel`, `historico`, `ia` (chama a API de verdade), `avaliacao`, `sobre`.
 

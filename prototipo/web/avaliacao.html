@@ -37,6 +37,28 @@ function porClasse(m) {
     `<tr class="font-bold"><th scope="row">Média macro</th><td>${pct(m.media_macro.precisao)}</td><td>${pct(m.media_macro.revocacao)}</td><td>${pct(m.media_macro.f1)}</td><td>${m.tamanho_teste}</td></tr></tbody></table>`;
 }
 
+// Compara a árvore sem ajuste, a alternativa só com limiar, o modelo escolhido e o teto (todas no mesmo conjunto de teste).
+function comparacao(m) {
+  const d = m.decisao, numero = (x) => esc(String(x).replace(".", ","));
+  const escolhido = { acuracia: m.acuracia, media_macro: m.media_macro, revocacao_vermelho: m.revocacao_vermelho,
+    precisao_vermelho: m.por_classe.Vermelho.precisao, falsos_negativos_vermelho: m.falsos_negativos_vermelho };
+  const linhas = [
+    ["Árvore sem ajuste", m.sem_ajuste_conservador],
+    [`Só limiar conservador (${m.alternativa_so_limiar ? pct(m.alternativa_so_limiar.limiar_vermelho) : "—"})`, m.alternativa_so_limiar],
+    [`<b>Modelo usado</b>: peso ${numero(d.peso_vermelho)} para o Vermelho${d.limiar_vermelho == null ? "" : ", limiar " + pct(d.limiar_vermelho)}`, escolhido],
+    ["Teto: a própria regra sem ruído", m.teto_referencia],
+  ].filter(([, r]) => r);
+  const corpo = linhas.map(([nome, r]) => `<tr><th scope="row" class="font-normal">${nome}</th><td>${pct(r.revocacao_vermelho)}</td>
+    <td>${pct(r.precisao_vermelho)}</td><td>${r.falsos_negativos_vermelho}</td><td>${pct(r.acuracia)}</td><td>${pct(r.media_macro.f1)}</td></tr>`).join("");
+  return `<section class="cartao"><h2 class="text-xl font-bold mb-2">Segurança do Vermelho: o que custou</h2>
+    <p class="mb-2">Meta do relatório: revocação do Vermelho ≥ ${pct(d.meta_revocacao_vermelho)}. ${d.meta_atingida_no_teste
+      ? "<b>Atingida no teste.</b>" : "<b>Não atingida no teste</b>; o número real está abaixo."}
+      A escolha foi feita por validação cruzada <b>só no treino</b>; o teste foi usado uma vez, para relatar.
+      Menos casos críticos perdidos custam mais falsos alarmes (precisão do Vermelho menor).</p>
+    <div class="overflow-x-auto"><table class="tabela"><thead><tr><th>Configuração</th><th>Revocação Vermelho</th><th>Precisão Vermelho</th>
+    <th>Vermelhos perdidos</th><th>Acurácia</th><th>F1 macro</th></tr></thead><tbody>${corpo}</tbody></table></div></section>`;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const r = await chamarApi("/metricas");
   if (!r.ok) {
@@ -54,6 +76,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div><b>Revocação do Vermelho</b><br><span class="text-sm">${m.falsos_negativos_vermelho} casos críticos não detectados como Vermelho</span></div></div>
       <div class="cartao text-center"><div class="text-4xl font-extrabold">${pct(lb.acuracia)}</div><div>Linha de base<br><span class="text-sm">${esc(lb.estrategia)}</span></div></div>
     </section>
+    ${m.teto_referencia ? `<section class="cartao"><h2 class="text-xl font-bold mb-2">Teto de referência: até onde dá para chegar</h2>
+      <p>Os rótulos foram gerados com ruído de medição, que nenhum modelo consegue recuperar. Aplicando a <b>própria regra de rotulagem</b>
+      às leituras sem ruído, a acurácia é de <b>${pct(m.teto_referencia.acuracia)}</b> (revocação do Vermelho ${pct(m.teto_referencia.revocacao_vermelho)}).
+      Por isso a acurácia do modelo (${pct(m.acuracia)}) deve ser lida contra esse teto, e não contra 100%.</p>
+      <p class="mt-2 font-semibold">${esc(m.aviso)}</p></section>` : ""}
+    ${m.decisao ? comparacao(m) : ""}
     <section class="cartao"><h2 class="text-xl font-bold mb-2">Matriz de confusão</h2>${matriz(m.matriz_confusao)}
       <p class="text-sm mt-2">Linhas = classe real; colunas = classe prevista. A diagonal são os acertos.</p></section>
     <section class="cartao"><h2 class="text-xl font-bold mb-2">Por classe e média macro</h2>${porClasse(m)}</section>
