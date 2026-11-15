@@ -124,6 +124,15 @@ Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (
 - **Disponibilidade** (`GET /disponibilidade`): leituras válidas recebidas ÷ esperadas (um envio por ponto a cada
   `INTERVALO_LEITURA_MIN`), meta ≥ 95% em 72 h. Descartes feitos no gateway contam como leituras que faltaram.
 
+## Segurança e deploy
+
+- `MODO_DEMO=1` libera a simulação de falha do LLM e `/simulador/leituras`; sem ele, ficam desligados (403).
+- Limite de pedidos por IP e por minuto (429 com `Retry-After`), teto de chamadas ao Groq por minuto e por dia,
+  corpo máximo de 16 KB (413), cabeçalhos de segurança (CSP, `nosniff`, `X-Frame-Options`, HSTS em https) e CORS
+  só para `ORIGENS_PERMITIDAS`.
+- `Dockerfile` (gera o `modelo.pkl` no build) e `render.yaml` na raiz. Passo a passo em
+  [`docs/DEPLOY.md`](../docs/DEPLOY.md). Teste de fumaça: `.venv\Scripts\python scripts\teste_fumaca.py --url <url>`.
+
 ## Limites do protótipo
 
 - Dados 100% simulados, com semente fixa; nenhuma medição real.
