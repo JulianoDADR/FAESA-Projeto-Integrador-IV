@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -52,7 +53,10 @@ async def classificar(requisicao: Request, simular_falha_llm: bool = False):
     except ErroValidacao as erro:
         return JSONResponse(status_code=422, content={"erros": erro.erros})
     classe, probabilidades = classificador.classificar(leitura)
-    mensagem, origem = explicacao.gerar_mensagem(classe, leitura, forcar_falha=simular_falha_llm)
+    # A chamada ao LLM e sincrona (httpx, ate 5 s): roda no pool de threads para nao travar o servidor.
+    # Mantemos a rota async para ler o JSON manualmente e devolver erros em portugues simples.
+    mensagem, origem = await run_in_threadpool(
+        explicacao.gerar_mensagem, classe, leitura, forcar_falha=simular_falha_llm)
     return {"classe": classe, "rotulo": classificador.ROTULOS[classe], "probabilidades": probabilidades,
             "mensagem": mensagem, "origem_mensagem": origem, "modo_demonstracao": True,
             "origem_dados": "simulado", "atualizado_em": agora()}
