@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
   <title>Sobre e limites · AgroAnálise</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="ativos/estilo.css">
@@ -40,6 +41,8 @@
       <li><b>Prompt injection:</b> o LLM recebe apenas campos estruturados e validados (classe, espécie, três números). Nenhum texto livre chega a ele, e campos extras são recusados pela API.</li>
       <li><b>Saída verificada:</b> no máximo 2 frases, em português, coerente com a classe e sem dose, volume ou produto; senão vale a mensagem-padrão.</li>
       <li><b>LGPD:</b> o sistema não coleta nem envia dados pessoais.</li>
+      <li><b>Botão “Ouvir”:</b> usa a leitura em voz alta do próprio navegador (Web Speech API), sem serviço do AgroAnálise. Damos preferência a uma voz instalada no aparelho; se só houver voz online, o navegador pode enviar o texto da mensagem (nunca dados pessoais) ao serviço de voz do fabricante.</li>
+      <li><b>Visão e talhão escolhidos</b> ficam só no endereço da página (<code>?visao=</code>, <code>?talhao=</code>); nada é guardado no aparelho.</li>
       <li><b>Plano gratuito e custo:</b> o GroqCloud tem limites de uso. Usamos cache, respostas curtas, timeout de 5 s e registro de tokens por chamada.</li>
       <li><b>Segredos:</b> a chave de API fica só em variável de ambiente, nunca no repositório.</li></ul></section>
 </main>

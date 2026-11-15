@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
   <title>Histórico · AgroAnálise</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="ativos/estilo.css">
@@ -12,12 +13,14 @@
 <main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
   <div>
     <h1 class="text-3xl font-extrabold">Histórico das últimas 24 horas</h1>
-    <p class="mt-1">Leituras <b>simuladas</b> (uma por hora), cada uma classificada pelo modelo.</p>
+    <p class="mt-1">Leituras <b>simuladas</b> (uma por hora do relógio simulado), cada uma classificada pelo modelo.</p>
   </div>
+  <div><label for="talhao" class="font-semibold block">Ponto de monitoramento</label>
+    <select id="talhao" class="mt-1 w-full sm:w-auto border-2 rounded-xl p-3 bg-white" style="border-color:var(--borda)"></select></div>
   <div id="erro" class="erro-caixa" hidden></div>
   <section class="cartao"><h2 class="font-bold mb-2">Umidade do solo (%) e classe de cada ponto</h2>
     <div id="grafico" class="overflow-x-auto"></div>
-    <p class="text-sm mt-2">Cada ponto traz a cor e uma forma: círculo = Ideal, triângulo = Atenção, quadrado = Ação crítica.</p></section>
+    <p class="text-sm mt-2">Cada ponto traz a cor e uma forma: círculo = Ideal, triângulo = Atenção, octógono = Ação crítica; ponto vazio = sem dados.</p></section>
   <section class="cartao overflow-x-auto"><table class="tabela" id="tabela"></table></section>
 </main>
 
@@ -28,7 +31,13 @@ function marca(x, y, classe) {
   const c = COR[classe];
   if (classe === "Verde") return `<circle cx="${x}" cy="${y}" r="6" fill="${c}"/>`;
   if (classe === "Amarelo") return `<polygon points="${x},${y - 7} ${x + 7},${y + 6} ${x - 7},${y + 6}" fill="${c}"/>`;
-  return `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" fill="${c}"/>`;
+  if (classe === "Vermelho") return `<polygon points="${octogono(x, y, 7)}" fill="${c}"/>`;
+  return `<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="#8C877E" stroke-width="2" stroke-dasharray="2 2"/>`;
+}
+
+function octogono(x, y, r) {
+  return Array.from({ length: 8 }, (_, i) => { const a = Math.PI / 8 + (i * Math.PI) / 4;
+    return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
 }
 
 function grafico(pontos) {
@@ -36,20 +45,37 @@ function grafico(pontos) {
   const x = (i) => m.e + (i * (L - m.e - m.d)) / (pontos.length - 1);
   const y = (v) => m.t + (1 - v / 100) * (A - m.t - m.b);
   const grade = [0, 25, 50, 75, 100].map((v) => `<line x1="${m.e}" x2="${L - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="#ddd"/><text x="${m.e - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#555">${v}</text>`).join("");
-  const linha = pontos.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.umidade_solo)}`).join(" ");
-  const horas = pontos.map((p, i) => (i % 4 === 0 ? `<text x="${x(i)}" y="${A - 8}" text-anchor="middle" font-size="11" fill="#555">${p.hora.slice(11, 16)}</text>` : "")).join("");
-  const marcas = pontos.map((p, i) => marca(x(i), y(p.umidade_solo), p.classe)).join("");
+  // Sem dados: a linha é interrompida (nunca inventamos o valor que faltou).
+  let linha = "", levantado = true;
+  pontos.forEach((p, i) => { if (p.umidade_solo === null) { levantado = true; return; }
+    linha += `${levantado ? "M" : "L"}${x(i)},${y(p.umidade_solo)} `; levantado = false; });
+  const horas = pontos.map((p, i) => (i % 4 === 0 ? `<text x="${x(i)}" y="${A - 8}" text-anchor="middle" font-size="11" fill="#555">${p.hora_simulada}</text>` : "")).join("");
+  const marcas = pontos.map((p, i) => marca(x(i), y(p.umidade_solo ?? 0), p.classe)).join("");
   return `<svg viewBox="0 0 ${L} ${A}" style="min-width:560px;width:100%" role="img" aria-label="Gráfico de umidade do solo nas últimas 24 horas">${grade}<path d="${linha}" fill="none" stroke="#777" stroke-width="2"/>${marcas}${horas}</svg>`;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const r = await chamarApi("/historico");
-  if (!r.ok) { const e = document.getElementById("erro"); e.hidden = false; e.textContent = r.erros[0]; return; }
+async function carregar(talhao) {
+  const e = document.getElementById("erro");
+  document.getElementById("grafico").innerHTML = '<div class="esqueleto" style="height:220px"></div>';
+  const r = await chamarApi("/historico?talhao=" + encodeURIComponent(talhao));
+  if (!r.ok) { e.hidden = false; e.textContent = r.erros[0]; return; }
+  e.hidden = true;
   document.getElementById("grafico").innerHTML = grafico(r.dados);
-  const icone = { Verde: "●", Amarelo: "▲", Vermelho: "■" };
-  document.getElementById("tabela").innerHTML = "<thead><tr><th>Hora</th><th>Solo %</th><th>Temp. °C</th><th>Ar %</th><th>Classe</th></tr></thead><tbody>" +
-    [...r.dados].reverse().map((p) => `<tr><td>${formatarHora(p.hora)}</td><td>${p.umidade_solo}</td><td>${p.temperatura}</td><td>${p.umidade_ar}</td>
-      <td><span style="color:${COR[p.classe]}" aria-hidden="true">${icone[p.classe]}</span> <b>${p.rotulo}</b></td></tr>`).join("") + "</tbody>";
+  // Forma + cor também na tabela (mesmas formas do gráfico).
+  const icone = (c) => `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">${marca(8, 8.5, c)}</svg>`;
+  const v = (x, u) => (x === null ? "—" : x + u);
+  document.getElementById("tabela").innerHTML = "<thead><tr><th>Hora (simulada)</th><th>Solo</th><th>Temp.</th><th>Ar</th><th>Classe</th></tr></thead><tbody>" +
+    [...r.dados].reverse().map((p) => `<tr><td>${esc(p.hora_simulada)}</td><td>${v(p.umidade_solo, "%")}</td><td>${v(p.temperatura, " °C")}</td><td>${v(p.umidade_ar, "%")}</td>
+      <td>${p.classe ? `${icone(p.classe)} <b>${esc(p.rotulo)}</b>` : "<i>Sem dados</i>"}</td></tr>`).join("") + "</tbody>";
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const sel = document.getElementById("talhao");
+  const t = await chamarApi("/talhoes");
+  const inicial = parametroUrl("talhao") || "A";
+  if (t.ok) sel.innerHTML = t.dados.talhoes.map((x) => `<option value="${esc(x.id)}" ${x.id === inicial ? "selected" : ""}>${esc(x.nome)} · ${esc(nomeEspecie(x.especie))} · ${esc(x.local)}</option>`).join("");
+  sel.addEventListener("change", () => carregar(sel.value));
+  carregar(t.ok ? sel.value : inicial);
 });
 </script>
 </body>
