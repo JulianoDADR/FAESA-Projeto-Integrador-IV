@@ -180,3 +180,23 @@ def test_disponibilidade_conta_validas_sobre_esperadas(monkeypatch):
 def test_rota_disponibilidade(cliente):
     d = cliente.get("/disponibilidade?horas=72").json()
     assert d["janela_horas"] == 72 and len(d["por_talhao"]) == 8 and "observacao" in d
+
+
+# ---------- semente do banco (deploy nao abre vazio) ----------
+def test_semente_grava_simulado_alinhado_ao_relogio_e_pode_rodar_de_novo(cliente, monkeypatch):
+    from app.fontes import FUSO_EXIBICAO, hora_simulada
+    from app.semear import passo_do_instante, semear
+    agora = datetime(2026, 11, 15, 18, 0, tzinfo=timezone.utc)  # 15:00 em Brasilia
+    assert hora_simulada(passo_do_instante(agora)) == agora.astimezone(FUSO_EXIBICAO).strftime("%H:%M") == "15:00"
+
+    primeira = semear(horas=6, agora=agora, intervalo_min=10)
+    assert primeira["gravadas"] > 0 and banco.contar_leituras() == primeira["gravadas"]
+    segunda = semear(horas=6, agora=agora, intervalo_min=10)
+    assert segunda["gravadas"] == 0 and segunda["ignoradas"] == primeira["gravadas"]
+
+    monkeypatch.setenv("FONTE_LEITURAS", "banco")
+    fontes.definir_fonte(fontes.FonteBanco(relogio=lambda: agora))
+    d = cliente.get("/status").json()
+    assert any(l["classe"] for l in d["leituras"]) and all(l["origem_dados"] in ("simulado", "sem leitura") for l in d["leituras"])
+    h = fontes.FonteBanco(relogio=lambda: agora).historico("A", 6)
+    assert sum(p["umidade_solo"] is not None for p in h) == 6
