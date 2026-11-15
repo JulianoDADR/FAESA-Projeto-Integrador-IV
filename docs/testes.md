@@ -1,11 +1,11 @@
 # Testes automatizados
 
 Gerado por `python scripts/relatorio_testes.py` (dentro de `prototipo/`) em
-2026-11-15T21:18:03+00:00, a partir de uma execução real do `pytest`.
+2026-11-15T21:29:08+00:00, a partir de uma execução real do `pytest`.
 O mesmo `pytest` roda no GitHub Actions a cada push (`.github/workflows/testes.yml`), sem segredos: o LLM é sempre
 simulado e cada teste usa um banco SQLite temporário.
 
-**Resultado: 200 de 200 testes aprovados** (`200 passed, 1 warning in 6.83s`).
+**Resultado: 205 de 205 testes aprovados** (`205 passed, 1 warning in 6.90s`).
 
 ## Cenários exigidos (relatório, seção 7.6) e o que cobre cada um
 
@@ -30,6 +30,7 @@ simulado e cada teste usa um banco SQLite temporário.
 | Segurança | Abuso: limite por IP, corpo grande, MODO_DEMO, cabeçalhos, CORS, teto do LLM | 429, 413, 403 e cabeçalhos presentes | 17 de 17 testes passaram | **aprovado** |
 | Interface | Páginas, roteiro da demonstração e privacidade (sem armazenamento local) | 200; roteiro válido | 34 de 34 testes passaram | **aprovado** |
 | Mapa de riscos | Esquema do /riscos/{regiao_id}, orientações com fonte oficial e sem dose/produto/manejo, coordenada do usuário fora dos pedidos | GeoJSON válido; nenhuma orientação proibida; só o nome da região vai à API | 9 de 9 testes passaram | **aprovado** |
+| Impacto | Cálculo dos indicadores (adoção autônoma, clareza, disponibilidade) | sem coleta = sem dados; regras do Quadro 5 | 5 de 5 testes passaram | **aprovado** |
 
 ## O que NÃO é testado automaticamente
 
@@ -136,6 +137,14 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_validador_descarta_com_motivo[P:A;N:1;S:610;T:75;U:70-fora da faixa]`
 - ✅ `test_validador_descarta_com_motivo[P:A;N:1;S:610;T:nan;U:nan-falha no DHT11]`
 - ✅ `test_validador_descarta_com_motivo[P:Z;N:1;S:610;T:22;U:70-ponto desconhecido]`
+
+### `testes/test_indicadores.py` (5 de 5)
+
+- ✅ `test_disponibilidade_le_a_api_e_avisa_quando_e_simulada`
+- ✅ `test_disponibilidade_sem_url_nao_e_medida`
+- ✅ `test_planilha_vazia_nao_inventa_numero`
+- ✅ `test_regras_de_autonomia_ajuda_tempo_e_consentimento`
+- ✅ `test_relatorio_marca_meta_e_nunca_inventa_agua_e_perdas`
 
 ### `testes/test_ingestao.py` (31 de 31)
 

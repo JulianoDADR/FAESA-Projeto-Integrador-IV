@@ -15,6 +15,11 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 .venv/Scripts/python -m pytest -v                  # testes (o LLM é sempre mockado; nenhum teste usa a rede)
 .venv/Scripts/python -m gateway.gateway --simulado --api http://localhost:8000   # gateway com Arduino simulado
 .venv/Scripts/python -m app.semear --horas 72      # leituras simuladas no banco (DATABASE_URL)
+.venv/Scripts/python ml/avaliar_classificador.py   # docs/avaliacao/classificador.md
+.venv/Scripts/python ml/avaliar_llm.py             # docs/avaliacao/llm.md (mock; --ao-vivo usa o Groq)
+.venv/Scripts/python scripts/relatorio_testes.py   # pytest real + docs/testes.md
+.venv/Scripts/python scripts/teste_fumaca.py --url <url>   # contra o servidor no ar
+.venv/Scripts/python ml/calcular_indicadores.py    # indicadores do Quadro 5 (docs/usabilidade/)
 ```
 Variáveis: `FONTE_LEITURAS` (simulada|banco), `TOKEN_DISPOSITIVO`, `DATABASE_URL`, `MINUTOS_DESATUALIZADO`,
 `INTERVALO_LEITURA_MIN`. Os testes usam um SQLite temporário por teste (`testes/conftest.py`).

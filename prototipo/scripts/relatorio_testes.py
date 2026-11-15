@@ -56,6 +56,8 @@ CENARIOS = [
     ("Mapa de riscos", "Esquema do /riscos/{regiao_id}, orientações com fonte oficial e sem dose/produto/manejo, "
      "coordenada do usuário fora dos pedidos", "GeoJSON válido; nenhuma orientação proibida; só o nome da região vai à API",
      ["test_riscos.py::"]),
+    ("Impacto", "Cálculo dos indicadores (adoção autônoma, clareza, disponibilidade)", "sem coleta = sem dados; regras do Quadro 5",
+     ["test_indicadores.py::"]),
 ]
 
 
