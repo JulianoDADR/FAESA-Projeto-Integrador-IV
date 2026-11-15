@@ -1,0 +1,71 @@
+{
+  "_comentario": "Roteiro do modo apresentação (index.html). Edite textos, ordem e durações aqui, sem mexer no código. Tipos: abertura, cenario, sem_dados, talhoes, agricultor, fim. Em 'cenario', 'simular_falha_llm': true mostra a mensagem-padrão.",
+  "titulo": "AgroAnálise em 1 minuto",
+  "passos": [
+    {
+      "tipo": "abertura",
+      "titulo": "Seu cafezal em um semáforo",
+      "legenda": "Sensores leem o solo e o clima. Um modelo de Machine Learning decide a cor. Um LLM só explica em palavras simples. Tudo aqui é simulado.",
+      "duracao_s": 7
+    },
+    {
+      "tipo": "cenario",
+      "titulo": "Condição ideal",
+      "legenda": "Arábica com solo úmido e temperatura amena: o semáforo fica no Ideal (círculo verde).",
+      "leitura": { "especie": "Arabica", "umidade_solo": 55, "temperatura": 21, "umidade_ar": 72 },
+      "duracao_s": 8
+    },
+    {
+      "tipo": "cenario",
+      "titulo": "O solo está secando",
+      "legenda": "A umidade do solo caiu: o semáforo pede Atenção (triângulo amarelo). Cor, palavra, ícone e forma dizem a mesma coisa.",
+      "leitura": { "especie": "Arabica", "umidade_solo": 33, "temperatura": 22, "umidade_ar": 70 },
+      "duracao_s": 8
+    },
+    {
+      "tipo": "cenario",
+      "titulo": "Calor excessivo no Conilon",
+      "legenda": "Temperatura muito alta: Ação crítica (octógono vermelho). O sistema pede para ir até a lavoura; não aciona irrigação.",
+      "leitura": { "especie": "Conilon", "umidade_solo": 50, "temperatura": 38, "umidade_ar": 65 },
+      "duracao_s": 8
+    },
+    {
+      "tipo": "sem_dados",
+      "titulo": "Sensor sem sinal",
+      "legenda": "Sem leitura recente, o semáforo fica cinza e avisa. Ele nunca presume que está tudo bem.",
+      "duracao_s": 7
+    },
+    {
+      "tipo": "cenario",
+      "titulo": "E se o LLM cair?",
+      "legenda": "Simulamos a falha do LLM: a cor continua vindo do classificador e a mensagem vira o texto-padrão. O semáforo não para.",
+      "leitura": { "especie": "Conilon", "umidade_solo": 12, "temperatura": 31, "umidade_ar": 50 },
+      "simular_falha_llm": true,
+      "duracao_s": 8
+    },
+    {
+      "tipo": "talhoes",
+      "titulo": "A propriedade inteira",
+      "legenda": "Oito pontos de monitoramento ao vivo, com os que pedem mais cuidado primeiro.",
+      "duracao_s": 9
+    },
+    {
+      "tipo": "agricultor",
+      "titulo": "A visão do agricultor",
+      "legenda": "Semáforo grande, uma frase curta e o botão Ouvir, que lê a mensagem em voz alta no próprio celular.",
+      "talhao": "C",
+      "duracao_s": 9
+    },
+    {
+      "tipo": "fim",
+      "titulo": "Resumo",
+      "itens": [
+        "O classificador decide a cor; o LLM só explica, e há texto-padrão quando ele falha.",
+        "Cor nunca sozinha: palavra, ícone e forma em cada estado.",
+        "Sem dados recentes, cinza e aviso, nunca uma cor de avaliação.",
+        "Dados simulados e faixas provisórias: valida o pipeline, não a eficácia em campo."
+      ],
+      "duracao_s": 12
+    }
+  ]
+}
