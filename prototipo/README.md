@@ -62,7 +62,7 @@ Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
 
 `GET /saude` · `GET /faixas` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` ·
 `GET /cenarios` · `GET /talhoes` · `GET /simulador/leituras` (`?passo=`, `?talhao=`, `?simular_falha_llm=true`) ·
-`GET /historico?talhao=A`
+`GET /historico?talhao=A` · `GET /status` (fonte ativa) · `POST /leituras` (gateway, com token) · `GET /disponibilidade?horas=72`
 
 ## Páginas
 
@@ -90,9 +90,44 @@ temperatura sobe à tarde, há dias com chuva simulada e um sensor (talhão H) q
 Cada leitura passa pela mesma avaliação do `/classificar` (`app/servico.py`). A `FonteBanco` (gateway) vem na Etapa 4.
 O roteiro do modo apresentação fica em `web/ativos/roteiro_demo.json` e pode ser editado sem mexer no código.
 
+## Pipeline com banco e gateway (dados do sensor)
+
+O caminho previsto no relatório (seções 7.3, 8.2 e 8.4) já roda de ponta a ponta, **com o Arduino simulado**:
+
+```
+Arduino (ou porta virtual) --serial--> gateway (valida, guarda em SQLite local) --HTTPS + token--> POST /leituras
+   --> banco (SQLAlchemy) --> FonteBanco --> /status --> páginas
+```
+
+Para ver funcionando (dois terminais, dentro de `prototipo/`; no `.env` defina `TOKEN_DISPOSITIVO` com um valor longo):
+
+```bash
+# terminal 1: API lendo do banco; leitura com mais de 1 min vira "sem dados" (bom para demonstrar)
+set FONTE_LEITURAS=banco& set MINUTOS_DESATUALIZADO=1& .venv\Scripts\python -m uvicorn app.principal:app
+# terminal 2: gateway com Arduino simulado (porta virtual loop://), um ciclo a cada 5 s
+.venv\Scripts\python -m gateway.gateway --simulado --api http://localhost:8000 --intervalo 5
+```
+
+Pare o gateway (Ctrl+C) e, depois de 1 minuto, as páginas mostram **Sem dados atualizados** (cinza, nunca uma cor).
+Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (leituras simuladas).
+
+- **Banco:** `DATABASE_URL` (padrão SQLite em `prototipo/dados/`; no deploy, Postgres gerenciado, porque o disco
+  de serviços gratuitos pode ser apagado). Tabelas criadas no startup; leituras únicas por (talhão, instante).
+- **Ingestão:** `POST /leituras` exige `Authorization: Bearer <TOKEN_DISPOSITIVO>`; recusa campos extras, valores
+  fora do possível (contados como rejeição) e datas sem fuso, no futuro ou muito antigas; reenviar a mesma leitura
+  não duplica (200), mesma chave com valores diferentes dá 409.
+- **Gateway** (`gateway/`): protocolo `P:A;N:128;S:432;T:27.5;U:61` (S = leitura bruta do solo, 0..1023).
+  Descarta mensagem incompleta, falha do DHT11 (`nan`), sensor de solo solto, valor fora da faixa, reenvio (mesmo N)
+  e oscilação abrupta (mediana das últimas 5). Guarda tudo em SQLite local e reenvia com espera exponencial.
+- **Arduino** (`arduino/agroanalise/agroanalise.ino`): **não testado em hardware**; traz o esquema de ligação.
+  **A calibração do sensor de solo está pendente**: os valores 850 (seco) e 400 (molhado) são provisórios.
+- **Disponibilidade** (`GET /disponibilidade`): leituras válidas recebidas ÷ esperadas (um envio por ponto a cada
+  `INTERVALO_LEITURA_MIN`), meta ≥ 95% em 72 h. Descartes feitos no gateway contam como leituras que faltaram.
+
 ## Limites do protótipo
 
 - Dados 100% simulados, com semente fixa; nenhuma medição real.
 - Rótulos gerados por regras sobre as mesmas variáveis de entrada: as métricas validam o pipeline, não a eficácia em campo.
-- Sem acionamento de irrigação, diagnóstico de doenças, recomendação agronômica, login, banco em nuvem ou deploy (C3).
+- Sem acionamento de irrigação, diagnóstico de doenças, recomendação agronômica ou login.
+- Arduino ainda não montado: o gateway roda com porta virtual; sketch e calibração não testados em hardware.
 - Sem dados pessoais.

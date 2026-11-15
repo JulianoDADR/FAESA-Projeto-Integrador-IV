@@ -13,13 +13,19 @@ python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt 
 .venv/Scripts/python ml/treinar.py --salvar        # treinar e gravar modelo.pkl, metricas.json e dataset
 .venv/Scripts/python -m uvicorn app.principal:app  # subir API + páginas em http://localhost:8000
 .venv/Scripts/python -m pytest -v                  # testes (o LLM é sempre mockado; nenhum teste usa a rede)
+.venv/Scripts/python -m gateway.gateway --simulado --api http://localhost:8000   # gateway com Arduino simulado
+.venv/Scripts/python -m app.semear --horas 72      # leituras simuladas no banco (DATABASE_URL)
 ```
+Variáveis: `FONTE_LEITURAS` (simulada|banco), `TOKEN_DISPOSITIVO`, `DATABASE_URL`, `MINUTOS_DESATUALIZADO`,
+`INTERVALO_LEITURA_MIN`. Os testes usam um SQLite temporário por teste (`testes/conftest.py`).
 Sem `--salvar`, `treinar.py` só imprime as métricas (não sobrescreve arquivos versionados).
 
 ## Estrutura
 - `prototipo/config/faixas.json`: fonte única das faixas (treino, rotulagem provisória, limites da interface).
 - `prototipo/ml/`: geração do dataset simulado e treino/avaliação. `prototipo/app/`: API FastAPI.
 - `prototipo/web/`: páginas HTML + Tailwind (CDN) + JS puro, servidas pela própria API.
+- `prototipo/app/fontes.py`: `FonteDeLeituras` (simulada ou banco); `app/servico.py`: avaliação única de uma leitura.
+- `prototipo/gateway/`: gateway local (serial, validação, buffer SQLite, envio). `prototipo/arduino/`: sketch (não testado).
 - `prototipo/testes/`: pytest. `docs/`: fontes, registro de uso de IA e documentação.
 
 ## Convenções
