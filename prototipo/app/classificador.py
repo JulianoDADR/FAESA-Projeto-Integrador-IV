@@ -4,8 +4,11 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
+from app.decisao import decidir
+
 CAMINHO_MODELO = Path(__file__).resolve().parent.parent / "ml" / "saida" / "modelo.pkl"
 ROTULOS = {"Verde": "Ideal", "Amarelo": "Atenção", "Vermelho": "Ação crítica"}
+CLASSES = list(ROTULOS)
 
 _pacote = None
 
@@ -14,7 +17,7 @@ def carregar_modelo(caminho=CAMINHO_MODELO):
     global _pacote
     if _pacote is None:
         if not Path(caminho).exists():
-            raise FileNotFoundError("Modelo não encontrado. Rode: python ml/treinar.py")
+            raise FileNotFoundError("Modelo não encontrado. Rode: python ml/treinar.py --salvar")
         _pacote = joblib.load(caminho)
     return _pacote
 
@@ -23,8 +26,18 @@ def modelo_disponivel():
     return CAMINHO_MODELO.exists()
 
 
+def parametros_decisao():
+    pacote = carregar_modelo()
+    return {"peso_vermelho": pacote.get("peso_vermelho", 1), "limiar_vermelho": pacote.get("limiar_vermelho")}
+
+
 def classificar(leitura):
-    """leitura: dicionario ja validado. Devolve (classe, probabilidades por classe)."""
+    """leitura: dicionario ja validado. Devolve (classe, proporcoes por classe, regra_conservadora_aplicada).
+
+    As proporcoes sao a fracao de amostras de treino parecidas (mesma folha da arvore) em cada classe,
+    ponderada pelo class_weight do treino (com peso 3, cada Vermelho conta 3 vezes).
+    NAO sao confianca nem probabilidade calibrada.
+    """
     pacote = carregar_modelo()
     linha = pd.DataFrame([{
         "especie_conilon": 1 if leitura["especie"] == "Conilon" else 0,
@@ -33,7 +46,8 @@ def classificar(leitura):
         "umidade_ar": leitura["umidade_ar"],
     }])[pacote["atributos"]]
     modelo = pacote["modelo"]
-    probabilidades = modelo.predict_proba(linha)[0]
-    por_classe = {c: round(float(p), 4) for c, p in zip(modelo.classes_, probabilidades)}
-    classe = max(por_classe, key=por_classe.get)
-    return classe, {c: por_classe.get(c, 0.0) for c in ROTULOS}
+    ordem = [list(modelo.classes_).index(c) for c in CLASSES]
+    proporcoes = modelo.predict_proba(linha)[:, ordem]
+    previstas, regra = decidir(proporcoes, CLASSES, pacote.get("limiar_vermelho"))
+    por_classe = {c: round(float(p), 4) for c, p in zip(CLASSES, proporcoes[0])}
+    return str(previstas[0]), por_classe, bool(regra[0])

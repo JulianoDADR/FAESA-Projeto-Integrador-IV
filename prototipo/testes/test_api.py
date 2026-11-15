@@ -4,7 +4,8 @@ def test_classificar_valido_devolve_uma_das_tres_classes(cliente, leitura_valida
     d = r.json()
     assert d["classe"] in ("Verde", "Amarelo", "Vermelho")
     assert d["modo_demonstracao"] is True and d["origem_dados"] == "simulado"
-    assert set(d["probabilidades"]) == {"Verde", "Amarelo", "Vermelho"}
+    assert set(d["proporcoes"]) == {"Verde", "Amarelo", "Vermelho"} and "probabilidades" not in d
+    assert "Não é confiança" in d["explicacao_proporcoes"]
     assert d["origem_mensagem"] in ("llm", "padrao")
 
 

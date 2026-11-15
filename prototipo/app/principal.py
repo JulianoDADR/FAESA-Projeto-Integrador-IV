@@ -32,6 +32,13 @@ CENARIOS = [
 ]
 
 
+def explicar_proporcoes(peso_vermelho):
+    texto = "Proporção de amostras de treino parecidas (mesma folha da árvore) em cada classe"
+    if peso_vermelho and peso_vermelho != 1:
+        texto += f", com cada amostra Vermelha contando {peso_vermelho:g} vezes (peso de segurança do treino)"
+    return texto + ". Não é confiança nem certeza do modelo."
+
+
 def agora():
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
@@ -52,13 +59,16 @@ async def classificar(requisicao: Request, simular_falha_llm: bool = False):
         leitura = validar_leitura(corpo)
     except ErroValidacao as erro:
         return JSONResponse(status_code=422, content={"erros": erro.erros})
-    classe, probabilidades = classificador.classificar(leitura)
+    classe, proporcoes, regra_aplicada = classificador.classificar(leitura)
     # A chamada ao LLM e sincrona (httpx, ate 5 s): roda no pool de threads para nao travar o servidor.
     # Mantemos a rota async para ler o JSON manualmente e devolver erros em portugues simples.
     mensagem, origem = await run_in_threadpool(
         explicacao.gerar_mensagem, classe, leitura, forcar_falha=simular_falha_llm)
     fora = faixas.fora_da_faixa_de_treino(leitura)
-    return {"classe": classe, "rotulo": classificador.ROTULOS[classe], "probabilidades": probabilidades,
+    decisao = classificador.parametros_decisao()
+    return {"classe": classe, "rotulo": classificador.ROTULOS[classe],
+            "proporcoes": proporcoes, "explicacao_proporcoes": explicar_proporcoes(decisao["peso_vermelho"]),
+            "decisao": decisao | {"regra_conservadora_aplicada": regra_aplicada},
             "mensagem": mensagem, "origem_mensagem": origem, "modo_demonstracao": True,
             "origem_dados": "simulado", "atualizado_em": agora(),
             "aviso_fora_da_faixa_de_treino": bool(fora), "variaveis_fora_da_faixa_de_treino": fora}
@@ -74,7 +84,8 @@ def obter_faixas():
 def metricas():
     caminho = RAIZ / "ml" / "saida" / "metricas.json"
     if not caminho.exists():
-        return JSONResponse(status_code=404, content={"erros": ["Métricas não geradas. Rode: python ml/treinar.py"]})
+        return JSONResponse(status_code=404,
+                            content={"erros": ["Métricas não geradas. Rode: python ml/treinar.py --salvar"]})
     return json.loads(caminho.read_text(encoding="utf-8"))
 
 
@@ -95,7 +106,7 @@ def historico():
         temperatura = 20 + 4 * np.sin((hora.hour - 9) / 24 * 2 * np.pi) + gerador.normal(0, 0.6)
         leitura = {"especie": "Arabica", "umidade_solo": round(solo, 1), "temperatura": round(float(temperatura), 1),
                    "umidade_ar": round(float(np.clip(78 - 1.5 * (temperatura - 18) + gerador.normal(0, 2), 30, 99)), 1)}
-        classe, _ = classificador.classificar(leitura)
+        classe, _, _ = classificador.classificar(leitura)
         pontos.append({**leitura, "hora": hora.isoformat(timespec="minutes"), "classe": classe,
                        "rotulo": classificador.ROTULOS[classe], "origem": "simulado"})
     return pontos

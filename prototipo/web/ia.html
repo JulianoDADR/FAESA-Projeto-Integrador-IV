@@ -38,9 +38,12 @@
     <h2 id="t-res" class="text-xl font-bold">Resultado</h2>
     <div id="erro" class="erro-caixa" hidden></div>
     <div id="resultado" class="cartao"><p>Clique em <b>Classificar</b> para ver o resultado.</p></div>
-    <div id="probabilidades" class="cartao" hidden>
-      <h3 class="font-bold mb-2">Probabilidade por classe (do classificador)</h3>
+    <div id="proporcoes" class="cartao" hidden>
+      <h3 class="font-bold">Proporção de amostras parecidas em cada classe</h3>
+      <p id="explicacao-proporcoes" class="text-sm mb-2">Entre as leituras de treino mais parecidas com esta (mesma folha da árvore), quantas eram de cada cor.
+        <b>Não é confiança nem certeza do modelo.</b></p>
       <div id="barras" class="space-y-2"></div>
+      <p id="regra" class="text-sm mt-2"></p>
     </div>
   </section>
 </main>
@@ -106,7 +109,7 @@ function lerFormulario() {
 
 async function classificar() {
   const erro = document.getElementById("erro"), res = document.getElementById("resultado");
-  const probs = document.getElementById("probabilidades");
+  const probs = document.getElementById("proporcoes");
   erro.hidden = true;
   const url = "/classificar" + (simularFalha ? "?simular_falha_llm=true" : "");
   const r = await chamarApi(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(lerFormulario()) });
@@ -127,7 +130,13 @@ async function classificar() {
   }
   probs.hidden = false;
   const cores = { Verde: "var(--verde)", Amarelo: "var(--amarelo)", Vermelho: "var(--vermelho)" };
-  document.getElementById("barras").innerHTML = Object.entries(d.probabilidades).map(([c, p]) => `
+  const dec = d.decisao || {};
+  if (d.explicacao_proporcoes) document.getElementById("explicacao-proporcoes").textContent = d.explicacao_proporcoes;
+  document.getElementById("regra").innerHTML = dec.regra_conservadora_aplicada
+    ? "<b>Regra conservadora aplicada:</b> a proporção de Vermelho passou do limiar, então a cor ficou Vermelho por segurança."
+    : `Regra de decisão: peso ${esc(dec.peso_vermelho ?? 1)} para o Vermelho no treino` +
+      (dec.limiar_vermelho == null ? "; sem limiar extra." : `; Vermelho quando a proporção passa de ${pct(dec.limiar_vermelho)}.`);
+  document.getElementById("barras").innerHTML = Object.entries(d.proporcoes).map(([c, p]) => `
     <div><div class="flex justify-between"><span class="font-semibold">${rotuloClasse(c)}</span><span>${pct(p)}</span></div>
     <div class="barra" role="img" aria-label="${rotuloClasse(c)} ${pct(p)}"><span style="width:${p * 100}%;background:${cores[c]}"></span></div></div>`).join("");
 }
