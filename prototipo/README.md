@@ -60,9 +60,35 @@ Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
 
 ## Rotas
 
-`GET /saude` · `GET /faixas` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` · `GET /cenarios` · `GET /historico`
+`GET /saude` · `GET /faixas` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` ·
+`GET /cenarios` · `GET /talhoes` · `GET /simulador/leituras` (`?passo=`, `?talhao=`, `?simular_falha_llm=true`) ·
+`GET /historico?talhao=A`
 
-Páginas: `index`, `painel`, `historico`, `ia` (chama a API de verdade), `avaliacao`, `sobre`.
+## Páginas
+
+| Página | O que mostra |
+|---|---|
+| `index.html` | Início e **modo apresentação** (botão "Iniciar demonstração" ou `index.html?demo=1`) |
+| `agricultor.html` | Semáforo gigante, uma frase e o botão **Ouvir** (voz do navegador, pt-BR) |
+| `talhoes.html` | 8 pontos de monitoramento ao vivo, ordenados por gravidade, com filtros |
+| `painel.html` | Um talhão ao vivo (pausar, 1×/2×/4×) ou cenários prontos; barras com zonas |
+| `historico.html` | 24 h simuladas de um talhão (gráfico e tabela) |
+| `ia.html` | Formulário que chama `/classificar` de verdade, com proporções e selo da mensagem |
+| `avaliacao.html` | Métricas reais, teto de referência e comparação do Vermelho |
+| `sobre.html` | O que não faz, limites e IA responsável |
+
+Alternador **Agricultor / Técnico** em todas as páginas, pela URL (`?visao=agricultor` ou `?visao=tecnico`); nada é
+guardado no aparelho. Cada estado tem cor, palavra, ícone e **forma** (círculo = Ideal, triângulo = Atenção,
+octógono = Ação crítica; tracejado cinza = sem dados).
+
+## Simulador ao vivo
+
+As leituras dos talhões vêm de uma `FonteDeLeituras` (`app/fontes.py`). Hoje a fonte ativa é a `FonteSimulada`:
+determinística (mesmo passo, mesma leitura), sem estado no servidor. Cada passo vale 10 minutos simulados e o relógio
+avança um passo a cada 3 s reais; a interface pausa ou acelera pedindo outro passo. O solo seca em ciclos, a
+temperatura sobe à tarde, há dias com chuva simulada e um sensor (talhão H) que fica sem sinal de vez em quando.
+Cada leitura passa pela mesma avaliação do `/classificar` (`app/servico.py`). A `FonteBanco` (gateway) vem na Etapa 4.
+O roteiro do modo apresentação fica em `web/ativos/roteiro_demo.json` e pode ser editado sem mexer no código.
 
 ## Limites do protótipo
 
