@@ -1,8 +1,9 @@
 // Modo apresentação: percorre web/ativos/roteiro_demo.json com legendas, pausar/avançar/voltar e teclado (← → espaço, Esc).
 class Apresentacao {
-  constructor(roteiro, faixas) {
+  constructor(roteiro, faixas, modoDemo = true) {
     this.roteiro = roteiro;
     this.faixas = faixas;
+    this.modoDemo = modoDemo;
     this.indice = 0;
     this.pausado = false;
     this.inicioPasso = 0;
@@ -119,7 +120,12 @@ class Apresentacao {
           <li class="cartao"><b>1 · Sensores</b><br>solo, temperatura e ar</li><li class="cartao"><b>2 · Gateway</b><br>confere as leituras</li>
           <li class="cartao"><b>3 · API e IA</b><br>classificador decide; LLM explica</li><li class="cartao"><b>4 · Semáforo</b><br>cor, palavra, ícone e forma</li></ol></div>`;
     } else if (passo.tipo === "cenario") {
-      const url = "/classificar" + (passo.simular_falha_llm ? "?simular_falha_llm=true" : "");
+      // Sem MODO_DEMO no servidor, a falha não pode ser simulada: o passo mostra a classificação normal e avisa.
+      const simular = passo.simular_falha_llm && this.modoDemo;
+      if (passo.simular_falha_llm && !this.modoDemo) {
+        document.getElementById("demo-legenda").textContent = "Neste servidor a simulação de falha do LLM está desligada (MODO_DEMO). " + (passo.legenda || "");
+      }
+      const url = "/classificar" + (simular ? "?simular_falha_llm=true" : "");
       const r = await chamarApi(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(passo.leitura) });
       if (!atual()) return;
       if (!r.ok) { palco.innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
@@ -176,11 +182,12 @@ function proporcoesHtml(d) {
 }
 
 async function iniciarApresentacao() {
-  const [roteiro, faixas] = await Promise.all([fetch("ativos/roteiro_demo.json").then((r) => r.json()).catch(() => null), carregarFaixas()]);
+  const [roteiro, faixas, saude] = await Promise.all([fetch("ativos/roteiro_demo.json").then((r) => r.json()).catch(() => null),
+    carregarFaixas(), chamarApi("/saude")]);
   if (!roteiro) {
     const alvo = document.getElementById("erro-demo");
     if (alvo) { alvo.hidden = false; alvo.textContent = "Não consegui carregar o roteiro da demonstração. Confira se o servidor está ligado."; }
     return;
   }
-  new Apresentacao(roteiro, faixas).abrir();
+  new Apresentacao(roteiro, faixas, !saude.ok || saude.dados.modo_demo).abrir();
 }

@@ -148,6 +148,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   carregarCenarios();
   document.getElementById("classificar").addEventListener("click", classificar);
   const botaoFalha = document.getElementById("falha");
+  const saude = await chamarApi("/saude");
+  if (saude.ok && !saude.dados.modo_demo) botaoFalha.hidden = true; // simular falha só existe no modo demonstração
   botaoFalha.addEventListener("click", () => {
     simularFalha = !simularFalha;
     botaoFalha.setAttribute("aria-pressed", simularFalha);
