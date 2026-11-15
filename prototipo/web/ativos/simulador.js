@@ -1,5 +1,5 @@
-// Simulador ao vivo no navegador: pede /simulador/leituras a cada 3 s (passo a passo, 10 min simulados por passo).
-// Pausar e mudar a velocidade só mudam o ritmo dos pedidos; o servidor não guarda estado.
+// Atualização ao vivo: pede /status a cada 3 s. Com a fonte simulada, avança um passo (10 min simulados) por pedido;
+// pausar e mudar a velocidade só mudam o ritmo. Com a fonte banco (gateway), só busca a leitura mais recente.
 class Simulador {
   constructor({ talhao = null, aoAtualizar, aoErrar }) {
     this.talhao = talhao;
@@ -11,6 +11,7 @@ class Simulador {
     this.ultimaAtualizacao = null;
     this.relogio = null;
     this.ocupado = false;
+    this.fonte = null;
   }
 
   intervaloMs() { return 3000 / this.velocidade; }
@@ -21,10 +22,11 @@ class Simulador {
     const p = new URLSearchParams();
     if (this.passo !== null) p.set("passo", this.passo);
     if (this.talhao) p.set("talhao", this.talhao);
-    const r = await chamarApi("/simulador/leituras" + (p.toString() ? "?" + p : ""));
+    const r = await chamarApi("/status" + (p.toString() ? "?" + p : ""));
     this.ocupado = false;
     if (!r.ok) { this.aoErrar(r); return; }
-    this.passo = r.dados.passo;
+    this.passo = r.dados.passo; // null com a fonte banco: não há passo para avançar
+    this.fonte = r.dados.fonte;
     this.ultimaAtualizacao = Date.now();
     this.aoAtualizar(r.dados, this);
   }
@@ -51,8 +53,8 @@ class Simulador {
 function montarControlesSimulador(alvo, simulador) {
   alvo.innerHTML = `<div class="flex flex-wrap items-center gap-2">
       <button type="button" class="botao pequeno" data-acao="pausar" aria-pressed="false">⏸ Pausar</button>
-      <span class="font-semibold ml-1" id="rotulo-velocidade">Velocidade:</span>
-      <div role="group" aria-labelledby="rotulo-velocidade" class="flex gap-1">
+      <span class="font-semibold ml-1" id="rotulo-velocidade" data-so-simulado>Velocidade:</span>
+      <div role="group" aria-labelledby="rotulo-velocidade" class="flex gap-1" data-so-simulado>
         ${[1, 2, 4].map((v) => `<button type="button" class="botao pequeno" data-velocidade="${v}" aria-pressed="${v === 1}">${v}×</button>`).join("")}
       </div>
       <span class="text-base ml-auto" data-relogio aria-live="off">—</span>
@@ -69,8 +71,10 @@ function montarControlesSimulador(alvo, simulador) {
   }));
   const relogio = alvo.querySelector("[data-relogio]");
   const atualizar = (horaSimulada) => {
+    const simulada = simulador.fonte !== "banco";
+    alvo.querySelectorAll("[data-so-simulado]").forEach((e) => (e.hidden = !simulada));
     if (horaSimulada) relogio.dataset.hora = horaSimulada;
-    const hora = relogio.dataset.hora ? `Hora simulada ${relogio.dataset.hora} · ` : "";
+    const hora = !simulada ? "Leituras do gateway · " : relogio.dataset.hora ? `Hora simulada ${relogio.dataset.hora} · ` : "";
     relogio.textContent = simulador.ultimaAtualizacao
       ? `${hora}atualizado ${tempoDesde(simulador.ultimaAtualizacao)}${simulador.pausado ? " (pausado)" : ""}` : "carregando…";
   };

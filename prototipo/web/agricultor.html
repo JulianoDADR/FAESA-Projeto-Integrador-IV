@@ -81,7 +81,7 @@ function desenhar(dados) {
   desenharBarrasZonas(document.getElementById("barras-tecnico"), faixas, atual);
   const p = atual.proporcoes;
   document.getElementById("dados-tecnicos").innerHTML = `<ul class="list-disc pl-5 space-y-1">
-    <li>${esc(atual.nome)} · ${esc(nomeEspecie(atual.especie))} · ${esc(atual.local)} · hora simulada ${esc(atual.hora_simulada)}</li>
+    <li>${esc(atual.nome)} · ${esc(nomeEspecie(atual.especie))} · ${esc(atual.local)} · leitura das ${esc(atual.hora_leitura || "—")}${atual.passo !== null ? " (hora simulada)" : ""}</li>
     <li>Origem dos dados: <b>${esc(atual.origem_dados)}</b> · ${seloMensagem(atual.origem_mensagem)}</li>
     ${p ? `<li>Proporção de amostras parecidas: Ideal ${pct(p.Verde)}, Atenção ${pct(p.Amarelo)}, Ação crítica ${pct(p.Vermelho)} (não é confiança).</li>` : ""}
     ${atual.decisao ? `<li>Decisão: peso ${esc(atual.decisao.peso_vermelho)} para o Vermelho${atual.decisao.limiar_vermelho == null ? "" : `, limiar ${pct(atual.decisao.limiar_vermelho)}`}${atual.decisao.regra_conservadora_aplicada ? " (regra conservadora aplicada)" : ""}.</li>` : ""}

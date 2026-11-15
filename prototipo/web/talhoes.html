@@ -16,7 +16,7 @@
 <main class="max-w-5xl mx-auto px-4 py-6 space-y-5">
   <div>
     <h1 class="text-3xl font-extrabold">Talhões da propriedade</h1>
-    <p class="mt-1"><span id="propriedade">Sítio Demonstração (fictício)</span>: pontos de monitoramento com leituras <b>simuladas</b> ao vivo.
+    <p class="mt-1"><span id="propriedade">Sítio Demonstração (fictício)</span>: pontos de monitoramento com leituras <b>simuladas</b>, atualizadas ao vivo.
       Os que pedem mais cuidado aparecem primeiro.</p>
   </div>
 
@@ -74,7 +74,7 @@ function cartao(l, instante) {
     <div class="estado ${e ? e.cor : "cinza"} mt-3 py-2 px-3"><div class="flex items-center gap-2">${ICONES[e ? e.icone : "semdados"]}
       <span class="text-xl font-extrabold">${titulo}</span></div></div>
     <div class="mt-3" data-barras></div>
-    <p class="text-sm mt-2">Leitura das ${esc(l.hora_simulada)} (hora simulada) · <span data-desde="${instante}">${tempoDesde(instante)}</span></p>
+    <p class="text-sm mt-2">${l.hora_leitura ? `Leitura das ${esc(l.hora_leitura)}${l.passo !== null ? " (hora simulada)" : ""}` : "Nenhuma leitura recebida"}${l.desatualizada ? " · <b>desatualizada</b>" : ""} · <span data-desde="${instante}">consultado ${tempoDesde(instante)}</span></p>
   </a>`;
 }
 

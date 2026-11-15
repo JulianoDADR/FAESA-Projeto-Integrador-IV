@@ -133,7 +133,7 @@ class Apresentacao {
       desenharSemaforo(document.getElementById("demo-sem"), { classe: null,
         mensagem: "Não recebemos leitura recente dos sensores. Confira o equipamento. Nenhuma avaliação é mostrada." });
     } else if (passo.tipo === "talhoes") {
-      const r = await chamarApi("/simulador/leituras");
+      const r = await chamarApi("/status");
       if (!atual()) return;
       if (!r.ok) { palco.innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
       const lista = [...r.dados.leituras].sort((a, b) => GRAVIDADE[a.classe] - GRAVIDADE[b.classe]);
@@ -142,9 +142,9 @@ class Apresentacao {
         return `<div class="cartao cartao-talhao ${e ? e.cor : "cinza"} p-3"><div class="font-extrabold">${esc(l.nome)}</div>
           <div class="text-sm">${esc(nomeEspecie(l.especie))}</div>
           <div class="flex items-center gap-1 mt-1" style="color:var(--${e ? e.cor : "cinza"}-texto)">${ICONES[e ? e.icone : "semdados"]}<b>${e ? e.rotulo : "Sem dados"}</b></div></div>`;
-      }).join("")}</div><p class="text-sm mt-2">Hora simulada ${esc(r.dados.hora_simulada)} · <a class="underline" href="talhoes.html">abrir a página de talhões</a></p>`;
+      }).join("")}</div><p class="text-sm mt-2">${r.dados.hora_simulada ? `Hora simulada ${esc(r.dados.hora_simulada)}` : "Leituras do gateway"} · <a class="underline" href="talhoes.html">abrir a página de talhões</a></p>`;
     } else if (passo.tipo === "agricultor") {
-      const r = await chamarApi("/simulador/leituras?talhao=" + encodeURIComponent(passo.talhao || "A"));
+      const r = await chamarApi("/status?talhao=" + encodeURIComponent(passo.talhao || "A"));
       if (!atual()) return;
       if (!r.ok) { palco.innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
       const l = r.dados.leituras[0];

@@ -13,7 +13,7 @@
 <main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
   <div>
     <h1 class="text-3xl font-extrabold">Histórico das últimas 24 horas</h1>
-    <p class="mt-1">Leituras <b>simuladas</b> (uma por hora do relógio simulado), cada uma classificada pelo modelo.</p>
+    <p class="mt-1">Leituras <b>simuladas</b> (uma por hora; no simulador, hora simulada), cada uma classificada pelo modelo.</p>
   </div>
   <div><label for="talhao" class="font-semibold block">Ponto de monitoramento</label>
     <select id="talhao" class="mt-1 w-full sm:w-auto border-2 rounded-xl p-3 bg-white" style="border-color:var(--borda)"></select></div>
@@ -49,7 +49,7 @@ function grafico(pontos) {
   let linha = "", levantado = true;
   pontos.forEach((p, i) => { if (p.umidade_solo === null) { levantado = true; return; }
     linha += `${levantado ? "M" : "L"}${x(i)},${y(p.umidade_solo)} `; levantado = false; });
-  const horas = pontos.map((p, i) => (i % 4 === 0 ? `<text x="${x(i)}" y="${A - 8}" text-anchor="middle" font-size="11" fill="#555">${p.hora_simulada}</text>` : "")).join("");
+  const horas = pontos.map((p, i) => (i % 4 === 0 ? `<text x="${x(i)}" y="${A - 8}" text-anchor="middle" font-size="11" fill="#555">${p.hora_leitura ?? ""}</text>` : "")).join("");
   const marcas = pontos.map((p, i) => marca(x(i), y(p.umidade_solo ?? 0), p.classe)).join("");
   return `<svg viewBox="0 0 ${L} ${A}" style="min-width:560px;width:100%" role="img" aria-label="Gráfico de umidade do solo nas últimas 24 horas">${grade}<path d="${linha}" fill="none" stroke="#777" stroke-width="2"/>${marcas}${horas}</svg>`;
 }
@@ -64,8 +64,8 @@ async function carregar(talhao) {
   // Forma + cor também na tabela (mesmas formas do gráfico).
   const icone = (c) => `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">${marca(8, 8.5, c)}</svg>`;
   const v = (x, u) => (x === null ? "—" : x + u);
-  document.getElementById("tabela").innerHTML = "<thead><tr><th>Hora (simulada)</th><th>Solo</th><th>Temp.</th><th>Ar</th><th>Classe</th></tr></thead><tbody>" +
-    [...r.dados].reverse().map((p) => `<tr><td>${esc(p.hora_simulada)}</td><td>${v(p.umidade_solo, "%")}</td><td>${v(p.temperatura, " °C")}</td><td>${v(p.umidade_ar, "%")}</td>
+  document.getElementById("tabela").innerHTML = "<thead><tr><th>Hora</th><th>Solo</th><th>Temp.</th><th>Ar</th><th>Classe</th></tr></thead><tbody>" +
+    [...r.dados].reverse().map((p) => `<tr><td>${esc(p.hora_leitura ?? "—")}</td><td>${v(p.umidade_solo, "%")}</td><td>${v(p.temperatura, " °C")}</td><td>${v(p.umidade_ar, "%")}</td>
       <td>${p.classe ? `${icone(p.classe)} <b>${esc(p.rotulo)}</b>` : "<i>Sem dados</i>"}</td></tr>`).join("") + "</tbody>";
 }
 
