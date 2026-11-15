@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import (alimentador, banco, classificador, explicacao, faixas, fontes, indicadores, ingestao, seguranca,
+from app import (alimentador, banco, classificador, explicacao, faixas, fontes, indicadores, ingestao, riscos, seguranca,
                  servico)
 from app.validacao import ErroValidacao
 
@@ -175,6 +175,28 @@ def historico(talhao: str = "A", horas: int = Query(24, ge=2, le=72)):
         classe, _, _ = classificador.classificar(leitura)
         pontos.append(leitura | {"classe": classe, "rotulo": classificador.ROTULOS[classe]})
     return pontos
+
+
+@rotas.get("/riscos/regioes")
+def riscos_regioes():
+    """Regioes de demonstracao do mapa (centros aproximados). O navegador escolhe a mais proxima localmente."""
+    return {"regioes": riscos.provedor_ativo().regioes(), "origem_dados": "simulado"}
+
+
+@rotas.get("/riscos/{regiao_id}")
+def riscos_da_regiao(regiao_id: str):
+    """Camadas de risco SIMULADAS de uma regiao (GeoJSON), por regiao_id: nunca por coordenada do usuario."""
+    if regiao_id not in riscos.REGIOES:
+        return JSONResponse(status_code=404, content={"erros": [f"Região desconhecida: {regiao_id}."]})
+    provedor = riscos.provedor_ativo()
+    orientacoes = riscos.carregar_orientacoes()
+    return {"regiao": riscos.REGIOES[regiao_id], "origem_dados": provedor.origem, "provedor": provedor.nome,
+            "aviso": orientacoes["aviso"], "emergencia": orientacoes["emergencia"],
+            "orientacoes_revisadas_por_humano": orientacoes["revisado_por_humano"],
+            "tipos": {t: info | {"o_que_fazer": orientacoes["tipos"][t]["o_que_fazer"],
+                                 "fonte_oficial": orientacoes["tipos"][t]["fonte_oficial"]}
+                      for t, info in riscos.TIPOS.items()},
+            "camadas": provedor.camadas(regiao_id)}
 
 
 @asynccontextmanager

@@ -24,6 +24,7 @@ LIMITES_POR_MINUTO = {
     ("/simulador", "GET"): 240,
     ("/historico", "GET"): 60,
     ("/disponibilidade", "GET"): 30,
+    ("/riscos", "GET"): 60,
 }
 
 POLITICA_CONTEUDO = "; ".join([
