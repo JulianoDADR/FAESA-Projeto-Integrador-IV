@@ -1,11 +1,11 @@
 # Testes automatizados
 
 Gerado por `python scripts/relatorio_testes.py` (dentro de `prototipo/`) em
-2026-11-15T21:02:43+00:00, a partir de uma execução real do `pytest`.
+2026-11-15T21:18:03+00:00, a partir de uma execução real do `pytest`.
 O mesmo `pytest` roda no GitHub Actions a cada push (`.github/workflows/testes.yml`), sem segredos: o LLM é sempre
 simulado e cada teste usa um banco SQLite temporário.
 
-**Resultado: 188 de 188 testes aprovados** (`188 passed, 1 warning in 6.54s`).
+**Resultado: 200 de 200 testes aprovados** (`200 passed, 1 warning in 6.83s`).
 
 ## Cenários exigidos (relatório, seção 7.6) e o que cobre cada um
 
@@ -28,7 +28,8 @@ simulado e cada teste usa um banco SQLite temporário.
 | Falha | Rede do gateway cai / API devolve 500 | leituras ficam no buffer e são reenviadas com backoff | 1 de 1 testes passaram | **aprovado** |
 | Segurança | Injeção de prompt (texto livre, campo extra) | 422; nada chega ao LLM | 4 de 4 testes passaram | **aprovado** |
 | Segurança | Abuso: limite por IP, corpo grande, MODO_DEMO, cabeçalhos, CORS, teto do LLM | 429, 413, 403 e cabeçalhos presentes | 17 de 17 testes passaram | **aprovado** |
-| Interface | Páginas, roteiro da demonstração e privacidade (sem armazenamento local) | 200; roteiro válido | 31 de 31 testes passaram | **aprovado** |
+| Interface | Páginas, roteiro da demonstração e privacidade (sem armazenamento local) | 200; roteiro válido | 34 de 34 testes passaram | **aprovado** |
+| Mapa de riscos | Esquema do /riscos/{regiao_id}, orientações com fonte oficial e sem dose/produto/manejo, coordenada do usuário fora dos pedidos | GeoJSON válido; nenhuma orientação proibida; só o nome da região vai à API | 9 de 9 testes passaram | **aprovado** |
 
 ## O que NÃO é testado automaticamente
 
@@ -170,7 +171,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_token_ausente_ou_errado_e_recusado[bearer token-de-teste-123]`
 - ✅ `test_valor_fora_do_possivel_e_recusado_e_contado`
 
-### `testes/test_interface.py` (31 de 31)
+### `testes/test_interface.py` (34 de 34)
 
 - ✅ `test_ativos_novos_sao_servidos`
 - ✅ `test_menu_aponta_para_paginas_que_existem`
@@ -179,6 +180,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_paginas_e_ativos_sao_servidos[historico.html]`
 - ✅ `test_paginas_e_ativos_sao_servidos[ia.html]`
 - ✅ `test_paginas_e_ativos_sao_servidos[index.html]`
+- ✅ `test_paginas_e_ativos_sao_servidos[mapa.html]`
 - ✅ `test_paginas_e_ativos_sao_servidos[painel.html]`
 - ✅ `test_paginas_e_ativos_sao_servidos[sobre.html]`
 - ✅ `test_paginas_e_ativos_sao_servidos[talhoes.html]`
@@ -191,6 +193,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_sem_armazenamento_local[historico.html]`
 - ✅ `test_sem_armazenamento_local[ia.html]`
 - ✅ `test_sem_armazenamento_local[index.html]`
+- ✅ `test_sem_armazenamento_local[mapa.html]`
 - ✅ `test_sem_armazenamento_local[painel.html]`
 - ✅ `test_sem_armazenamento_local[simulador.js]`
 - ✅ `test_sem_armazenamento_local[sobre.html]`
@@ -200,6 +203,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[historico.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[ia.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[index.html]`
+- ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[mapa.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[painel.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[sobre.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[talhoes.html]`
@@ -220,6 +224,18 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_saida_ruim_pelo_http_vira_mensagem_padrao_e_e_contada[Everything is fine.]`
 - ✅ `test_saida_ruim_pelo_http_vira_mensagem_padrao_e_e_contada[Fique tranquilo, est\xe1 tudo certo.]`
 - ✅ `test_saida_ruim_pelo_http_vira_mensagem_padrao_e_e_contada[Uma frase. Outra frase. Mais uma. E mais outra.]`
+
+### `testes/test_riscos.py` (9 de 9)
+
+- ✅ `test_api_de_riscos_nao_aceita_coordenada`
+- ✅ `test_camadas_sao_deterministicas_por_regiao_e_dia`
+- ✅ `test_esquema_das_camadas_de_risco[norte]`
+- ✅ `test_esquema_das_camadas_de_risco[serrana]`
+- ✅ `test_mapa_so_chama_a_api_com_o_nome_da_regiao`
+- ✅ `test_numeros_de_emergencia_marcados_para_conferencia`
+- ✅ `test_provedor_real_e_so_um_esboco`
+- ✅ `test_regiao_desconhecida_e_regioes`
+- ✅ `test_toda_orientacao_tem_fonte_oficial_e_nenhuma_dose_produto_ou_manejo`
 
 ### `testes/test_seguranca.py` (17 de 17)
 

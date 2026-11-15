@@ -62,7 +62,7 @@ Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
 
 `GET /saude` · `GET /faixas` · `POST /classificar` (`?simular_falha_llm=true` para mostrar o fallback) · `GET /metricas` ·
 `GET /cenarios` · `GET /talhoes` · `GET /simulador/leituras` (`?passo=`, `?talhao=`, `?simular_falha_llm=true`) ·
-`GET /historico?talhao=A` · `GET /status` (fonte ativa) · `POST /leituras` (gateway, com token) · `GET /disponibilidade?horas=72`
+`GET /historico?talhao=A` · `GET /status` (fonte ativa) · `POST /leituras` (gateway, com token) · `GET /disponibilidade?horas=72` · `GET /riscos/regioes` · `GET /riscos/{regiao_id}`
 
 ## Páginas
 
@@ -73,6 +73,7 @@ Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
 | `talhoes.html` | 8 pontos de monitoramento ao vivo, ordenados por gravidade, com filtros |
 | `painel.html` | Um talhão ao vivo (pausar, 1×/2×/4×) ou cenários prontos; barras com zonas |
 | `historico.html` | 24 h simuladas de um talhão (gráfico e tabela) |
+| `mapa.html` | Mapa de riscos **simulados** da região (módulo demonstrativo): camadas, orientações gerais e fonte oficial; a localização fica só no aparelho |
 | `ia.html` | Formulário que chama `/classificar` de verdade, com proporções e selo da mensagem |
 | `avaliacao.html` | Métricas reais, teto de referência e comparação do Vermelho |
 | `sobre.html` | O que não faz, limites e IA responsável |

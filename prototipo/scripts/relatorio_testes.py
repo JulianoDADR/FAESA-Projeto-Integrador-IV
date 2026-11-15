@@ -53,6 +53,9 @@ CENARIOS = [
      "429, 413, 403 e cabeçalhos presentes", ["test_seguranca.py::"]),
     ("Interface", "Páginas, roteiro da demonstração e privacidade (sem armazenamento local)", "200; roteiro válido",
      ["test_interface.py::"]),
+    ("Mapa de riscos", "Esquema do /riscos/{regiao_id}, orientações com fonte oficial e sem dose/produto/manejo, "
+     "coordenada do usuário fora dos pedidos", "GeoJSON válido; nenhuma orientação proibida; só o nome da região vai à API",
+     ["test_riscos.py::"]),
 ]
 
 
