@@ -124,6 +124,16 @@ Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (
 - **Disponibilidade** (`GET /disponibilidade`): leituras válidas recebidas ÷ esperadas (um envio por ponto a cada
   `INTERVALO_LEITURA_MIN`), meta ≥ 95% em 72 h. Descartes feitos no gateway contam como leituras que faltaram.
 
+## Avaliação (eval) da IA
+
+- **Classificador:** `python ml/avaliar_classificador.py` gera [`docs/avaliacao/classificador.md`](../docs/avaliacao/classificador.md)
+  (validação cruzada k=5 no treino, busca de hiperparâmetros, teste usado uma vez, IC de Wilson, linha de base e
+  regra de referência).
+- **Camada de explicação (LLM):** `python ml/avaliar_llm.py` (mock reprodutível, sem rede) gera
+  [`docs/avaliacao/llm.md`](../docs/avaliacao/llm.md): 30 cenários, filtro de saída contra respostas rotuladas e falhas
+  da API pelo caminho HTTP. `python ml/avaliar_llm.py --ao-vivo` usa o Groq de verdade (precisa de `GROQ_API_KEY`)
+  e gera `llm_ao_vivo.md` com colunas para revisão humana.
+
 ## Segurança e deploy
 
 - `MODO_DEMO=1` libera a simulação de falha do LLM e `/simulador/leituras`; sem ele, ficam desligados (403).
