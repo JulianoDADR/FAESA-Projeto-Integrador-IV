@@ -1,15 +1,14 @@
 """Validacao da entrada. Uma leitura invalida NUNCA chega ao classificador nem gera cor de semaforo."""
 import math
 
+from app.faixas import variaveis
+
 ESPECIES = ("Arabica", "Conilon")
 CAMPOS = ("especie", "umidade_solo", "temperatura", "umidade_ar")
 
-# Faixas fisicamente plausiveis (nao sao faixas agronomicas).
-LIMITES = {
-    "umidade_solo": (0.0, 100.0, "Umidade do solo", "%"),
-    "temperatura": (-10.0, 60.0, "Temperatura", "°C"),
-    "umidade_ar": (0.0, 100.0, "Umidade do ar", "%"),
-}
+# Faixas fisicamente plausiveis (nao sao faixas agronomicas), lidas de config/faixas.json.
+LIMITES = {nome: (float(info["limite_fisico"][0]), float(info["limite_fisico"][1]), info["nome"], info["unidade"])
+           for nome, info in variaveis().items()}
 
 
 class ErroValidacao(Exception):

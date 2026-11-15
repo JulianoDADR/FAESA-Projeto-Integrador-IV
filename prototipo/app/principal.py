@@ -14,7 +14,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import classificador, explicacao
+from app import classificador, explicacao, faixas
 from app.validacao import ErroValidacao, validar_leitura
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -57,9 +57,17 @@ async def classificar(requisicao: Request, simular_falha_llm: bool = False):
     # Mantemos a rota async para ler o JSON manualmente e devolver erros em portugues simples.
     mensagem, origem = await run_in_threadpool(
         explicacao.gerar_mensagem, classe, leitura, forcar_falha=simular_falha_llm)
+    fora = faixas.fora_da_faixa_de_treino(leitura)
     return {"classe": classe, "rotulo": classificador.ROTULOS[classe], "probabilidades": probabilidades,
             "mensagem": mensagem, "origem_mensagem": origem, "modo_demonstracao": True,
-            "origem_dados": "simulado", "atualizado_em": agora()}
+            "origem_dados": "simulado", "atualizado_em": agora(),
+            "aviso_fora_da_faixa_de_treino": bool(fora), "variaveis_fora_da_faixa_de_treino": fora}
+
+
+@app.get("/faixas")
+def obter_faixas():
+    """Faixas provisorias, limites fisicos e intervalo de treino (a interface limita os controles por aqui)."""
+    return faixas.carregar_faixas()
 
 
 @app.get("/metricas")

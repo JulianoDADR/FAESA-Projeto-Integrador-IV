@@ -15,6 +15,7 @@ Metodo de rotulagem (documentado):
      gaussiano (incerteza de medicao), mas o conjunto guarda as leituras SEM esse ruido.
      Assim ha sobreposicao perto das fronteiras e o classificador nao chega a 100%.
 """
+import json
 from pathlib import Path
 
 import numpy as np
@@ -24,14 +25,15 @@ SEMENTE = 42
 NUM_AMOSTRAS = 3000
 CLASSES = ["Verde", "Amarelo", "Vermelho"]
 
+# Fonte unica das faixas: config/faixas.json (a API e a interface leem o mesmo arquivo).
+_CONFIG = json.loads((Path(__file__).resolve().parent.parent / "config" / "faixas.json").read_text(encoding="utf-8"))
 # (inicio_ideal, fim_ideal, margem)  -- valores provisorios de demonstracao
-FAIXAS = {
-    "Arabica": {"umidade_solo": (40, 70, 15), "temperatura": (18, 24, 4), "umidade_ar": (60, 85, 12)},
-    "Conilon": {"umidade_solo": (40, 70, 15), "temperatura": (22, 30, 4), "umidade_ar": (60, 85, 12)},
-}
+FAIXAS = {especie: {v: tuple(f) for v, f in faixas.items()}
+          for especie, faixas in _CONFIG["rotulagem"].items() if not especie.startswith("_")}
 # desvio padrao do ruido de rotulagem por variavel
-RUIDO = {"umidade_solo": 3.0, "temperatura": 1.0, "umidade_ar": 3.0}
-LIMITES = {"umidade_solo": (0, 100), "temperatura": (5, 42), "umidade_ar": (15, 100)}
+RUIDO = {v: info["ruido_rotulagem"] for v, info in _CONFIG["variaveis"].items()}
+# intervalo amostrado no dataset = intervalo que o modelo "viu" no treino
+LIMITES = {v: tuple(info["faixa_treino"]) for v, info in _CONFIG["variaveis"].items()}
 
 
 def nivel_variavel(valor, inicio, fim, margem):

@@ -46,12 +46,22 @@
 </main>
 
 <script>
+// Os limites dos controles deslizantes vêm de /faixas (config/faixas.json): só o intervalo visto no treino.
 const VARIAVEIS = [
   { id: "umidade_solo", nome: "Umidade do solo (%)", min: 0, max: 100, passo: 1, valor: 55 },
-  { id: "temperatura", nome: "Temperatura (°C)", min: -10, max: 60, passo: 0.5, valor: 21 },
-  { id: "umidade_ar", nome: "Umidade do ar (%)", min: 0, max: 100, passo: 1, valor: 72 },
+  { id: "temperatura", nome: "Temperatura (°C)", min: 5, max: 42, passo: 0.5, valor: 21 },
+  { id: "umidade_ar", nome: "Umidade do ar (%)", min: 15, max: 100, passo: 1, valor: 72 },
 ];
 let simularFalha = false;
+
+async function aplicarFaixasDeTreino() {
+  const r = await chamarApi("/faixas");
+  if (!r.ok) return; // sem servidor: mantém os valores padrão acima
+  VARIAVEIS.forEach((v) => {
+    const info = r.dados.variaveis[v.id];
+    if (info) [v.min, v.max] = info.faixa_treino;
+  });
+}
 
 function desenharControles() {
   document.getElementById("controles").innerHTML = VARIAVEIS.map((v) => `
@@ -110,6 +120,11 @@ async function classificar() {
   }
   const d = r.dados;
   desenharSemaforo(res, { classe: d.classe, mensagem: d.mensagem, atualizado_em: d.atualizado_em, selo: seloMensagem(d.origem_mensagem) });
+  if (d.aviso_fora_da_faixa_de_treino) {
+    const nomes = d.variaveis_fora_da_faixa_de_treino.map((id) => VARIAVEIS.find((v) => v.id === id)?.nome || id);
+    res.insertAdjacentHTML("beforeend", `<div class="aviso-caixa mt-3" role="note"><b>Fora do que o modelo viu no treino:</b> ${esc(nomes.join(", "))}.
+      A cor foi calculada, mas o modelo nunca treinou com valores assim; trate o resultado com cautela.</div>`);
+  }
   probs.hidden = false;
   const cores = { Verde: "var(--verde)", Amarelo: "var(--amarelo)", Vermelho: "var(--vermelho)" };
   document.getElementById("barras").innerHTML = Object.entries(d.probabilidades).map(([c, p]) => `
@@ -117,7 +132,8 @@ async function classificar() {
     <div class="barra" role="img" aria-label="${rotuloClasse(c)} ${pct(p)}"><span style="width:${p * 100}%;background:${cores[c]}"></span></div></div>`).join("");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await aplicarFaixasDeTreino();
   desenharControles();
   carregarCenarios();
   document.getElementById("classificar").addEventListener("click", classificar);
