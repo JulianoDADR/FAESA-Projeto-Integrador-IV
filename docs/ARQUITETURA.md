@@ -14,7 +14,7 @@ flowchart LR
   end
   subgraph Nuvem["3. Aplicação em nuvem (FastAPI)"]
     I["POST /leituras<br/>token do dispositivo"]
-    B[("Banco<br/>SQLite ou Postgres")]
+    B[("Banco<br/>SQLite local ou Turso/libSQL")]
     F["FonteDeLeituras<br/>simulada ou banco"]
     C["Classificador<br/>árvore Scikit-Learn"]
     E["Camada de explicação<br/>LLM Groq + filtro + mensagem-padrão"]
@@ -36,7 +36,7 @@ flowchart LR
 |---|---|---|---|
 | Aquisição | Campo ou bancada | `prototipo/arduino/agroanalise/agroanalise.ino` | Ler solo (bruto 0..1023) e DHT11; enviar uma linha por leitura. **Não testado em hardware; calibração pendente.** |
 | Processamento local | Computador ligado ao Arduino | `prototipo/gateway/` | Validar a linha (incompleta, `nan`, sensor solto, faixa, reenvio, oscilação), converter o solo para %, guardar em SQLite local e enviar com retentativa e backoff. |
-| Aplicação em nuvem | Serviço web (Render, plano gratuito) | `prototipo/app/` | Receber leituras autenticadas, guardar, classificar, gerar a mensagem e servir as páginas. |
+| Aplicação em nuvem | Função Python na Vercel | `prototipo/app/`, `prototipo/index.py` | Receber leituras autenticadas, guardar, classificar, gerar a mensagem e servir as páginas. |
 | Apresentação | Navegador do celular | `prototipo/web/` | Semáforo com palavra, ícone e forma; “Sem dados atualizados” em cinza; visão agricultor e técnico. |
 
 ## Decisões de projeto
@@ -47,6 +47,10 @@ flowchart LR
 - **Uma avaliação só para tudo:** `/classificar`, o simulador e o banco passam pela mesma função (`app/servico.py`).
 - **Fonte de leituras trocável** (`FONTE_LEITURAS`): `simulada` (determinística, rápida para demonstrar) ou `banco`
   (leituras do gateway, com a regra de dado desatualizado `MINUTOS_DESATUALIZADO`). As páginas usam só `/status`.
+- **Banco remoto opcional com fail-soft:** `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (ou `DATABASE_URL`) escolhem o
+  banco; sem ele, o SQLite local é o padrão. Com a fonte simulada, falha de banco não derruba páginas, `/status`,
+  `/classificar` ou `/metricas`; rotas de banco respondem 503. Com a fonte `banco`, falha no startup é fatal para não
+  exibir dado velho como atual.
 - **Regra conservadora do Vermelho:** peso 3 para o Vermelho no treino, escolhido por validação cruzada só no treino
   (`ml/treinar.py`); revocação do Vermelho 0,922 no teste.
 - **Faixas num único arquivo** (`config/faixas.json`): treino, rotulagem provisória, validação e interface.
@@ -58,8 +62,9 @@ flowchart LR
 
 | Risco | Efeito | Mitigação |
 |---|---|---|
-| Plano gratuito “dorme” | Primeiro acesso lento | Aviso “O servidor está acordando…” na interface; health check em `/saude`. |
-| Disco efêmero | SQLite apagado num reinício | `DATABASE_URL` para Postgres gerenciado; sem ele, semente de 72 h simuladas no startup (`SEMEAR_SE_VAZIO`). |
+| Função serverless | Cold start e nenhuma tarefa em segundo plano | Aviso “O servidor está acordando…” na interface; health check em `/saude`; alimentador desligado quando `VERCEL` existe. |
+| Disco efêmero | SQLite apagado num reinício | Turso/libSQL remoto (`TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`); semente manual de 72 h **simuladas** (`app/semear.py`). |
+| Banco indisponível | Rotas de histórico e disponibilidade falham | Fail-soft com `FONTE_LEITURAS=simulada` e respostas 503 nas rotas de banco; `/saude` expõe `banco_disponivel` sem segredo. |
 | Cota do Groq | Mensagens do LLM param | Cache por faixa de valores, teto por minuto e por dia, limite de pedidos por IP; mensagem-padrão. |
 | Gateway ou internet caem | Leituras atrasam | Buffer SQLite local com reenvio; painel mostra “Sem dados atualizados”, nunca uma cor velha. |
 | Abuso da API pública | Custo e indisponibilidade | Limite por IP (429), corpo máximo (413), token nas ingestões, `MODO_DEMO` para recursos de demonstração, cabeçalhos de segurança. |

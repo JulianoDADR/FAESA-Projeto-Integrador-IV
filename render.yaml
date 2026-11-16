@@ -22,7 +22,7 @@ services:
       - key: MINUTOS_DESATUALIZADO
         value: "15"
       - key: GROQ_MODELO
-        value: llama-3.1-8b-instant
+        value: openai/gpt-oss-20b
       - key: GROQ_MAX_POR_MINUTO
         value: "20"
       - key: GROQ_MAX_POR_DIA
@@ -31,5 +31,7 @@ services:
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
-      - key: DATABASE_URL
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
         sync: false

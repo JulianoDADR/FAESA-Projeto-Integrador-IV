@@ -119,6 +119,10 @@ HISTORICO = [
     "conferir logo.” (Verde). Ajuste com base no relatório (Quadro 3), não em palavras do banco: toda mensagem de "
     "Vermelho precisa pedir a verificação da área (vá, confira, verifique, avalie, olhe…). O caso do Verde (falso "
     "alarme) ficou como limitação conhecida: um filtro por palavras não entende o sentido.",
+    "2026-11-16: regra simétrica para o Verde, também pelo Quadro 3 (Verde = tom calmo): a mensagem não pode mandar "
+    "ir à lavoura com pressa nem sugerir dano à planta. Testada com 10 frases novas (5 ruins e 5 legítimas) fora deste "
+    "banco, em testes/test_explicacao.py. Neste banco o caso do Verde passou a ser bloqueado, mas pelo mesmo viés das "
+    "rodadas anteriores o resultado para essa categoria é otimista: precisa ser confirmado no modo ao vivo.",
 ]
 
 
@@ -155,7 +159,7 @@ class LLMFalso:
 
     def __call__(self, mensagens):
         self.chamadas += 1
-        classe = re.search(r"Classe: (\w+)", mensagens[1]["content"]).group(1)
+        classe = re.search(r"Classe: (\w+)", mensagens[-1]["content"]).group(1)
         texto, adequada, tipo = BANCO[classe][self.posicao[classe] % len(BANCO[classe])]
         self.posicao[classe] += 1
         self.ultima = {"texto": texto, "adequada": adequada, "tipo": tipo}
@@ -433,7 +437,7 @@ Em todos os casos de falha o sistema devolveu a mensagem-padrão e o semáforo c
 ## Limitações
 
 - O filtro de coerência é por palavras (regex): não entende o sentido. Frases ruins sem as palavras vigiadas passam
-  (veja a lista acima) e frases boas com palavras vigiadas são bloqueadas. Por isso a mensagem-padrão existe e a
+  (mesmo com 0 na lista acima, outras redações ainda podem passar) e frases boas com palavras vigiadas são bloqueadas. Por isso a mensagem-padrão existe e a
   revisão humana do modo ao vivo é necessária.
 - O LLM **nunca decide a cor**: em todos os cenários a classe veio do classificador. A mensagem só explica.
 - O modo mock não mede o modelo do Groq. O modo ao vivo depende da cota do plano gratuito e muda com o tempo

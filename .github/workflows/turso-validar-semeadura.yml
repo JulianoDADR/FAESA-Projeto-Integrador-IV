@@ -1,0 +1,93 @@
+# Validação manual do Turso (só roda por workflow_dispatch; usa os secrets TURSO_DATABASE_URL e TURSO_AUTH_TOKEN).
+# Padrão = SOMENTE LEITURA: valida a conexão e informa se as tabelas existem (banco novo vazio não é falha).
+# Escrita (criar tabelas + semear leituras SIMULADAS) exige executar_semente=true E confirmacao_escrita="SEMEAR".
+# Nenhum input é interpolado no shell: os valores chegam por variável de ambiente e são validados antes do uso.
+name: turso-validar-semeadura
+
+on:
+  workflow_dispatch:
+    inputs:
+      executar_semente:
+        description: "Gravar no Turso: criar tabelas inexistentes e semear leituras SIMULADAS"
+        required: true
+        type: boolean
+        default: false
+      horas:
+        description: "Janela da semeadura simulada (horas)"
+        required: true
+        type: choice
+        options: ["24", "48", "72"]
+        default: "72"
+      confirmacao_escrita:
+        description: "Para gravar, digite exatamente SEMEAR (ignorado se executar_semente=false)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turso-validar-semeadura
+  cancel-in-progress: false
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: prototipo
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      ENTRADA_EXECUTAR: ${{ inputs.executar_semente }}
+      ENTRADA_HORAS: ${{ inputs.horas }}
+      ENTRADA_CONFIRMACAO: ${{ inputs.confirmacao_escrita }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: prototipo/.python-version
+          cache: pip
+          cache-dependency-path: prototipo/requirements.txt
+      - name: Instalar dependências (requirements.txt)
+        run: |
+          python --version
+          python -m pip install -r requirements.txt
+      - name: Conferir secrets configurados (sem imprimir valores)
+        run: |
+          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
+            echo "[FALHOU] Configure os secrets TURSO_DATABASE_URL e TURSO_AUTH_TOKEN no repositório."
+            exit 1
+          fi
+          echo "[OK ] Secrets presentes"
+      - name: 1. Conexão (somente leitura; ausência de tabelas não é falha)
+        run: python scripts/verificar_turso.py --modo conexao
+      - name: 2. Validar autorização de escrita e janela
+        id: autorizacao
+        run: |
+          if [ "$ENTRADA_EXECUTAR" != "true" ]; then
+            echo "[INFO] executar_semente=false: nenhuma escrita será feita. Fim da validação somente leitura."
+            echo "gravar=nao" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          case "$ENTRADA_HORAS" in
+            24|48|72) ;;
+            *) echo "[FALHOU] horas inválidas (permitido: 24, 48 ou 72)."; exit 1 ;;
+          esac
+          if [ "$ENTRADA_CONFIRMACAO" != "SEMEAR" ]; then
+            echo "[FALHOU] Escrita não autorizada: digite exatamente SEMEAR em confirmacao_escrita."
+            exit 1
+          fi
+          echo "[OK ] Escrita autorizada para janela de $ENTRADA_HORAS h"
+          echo "gravar=sim" >> "$GITHUB_OUTPUT"
+      - name: 3. Criar tabelas inexistentes, semear duas vezes e comprovar (ESCRITA)
+        if: steps.autorizacao.outputs.gravar == 'sim'
+        run: python scripts/verificar_turso.py --modo semear --horas "$ENTRADA_HORAS" --confirmar-escrita
+      - name: 4. Estrutura (somente leitura)
+        if: steps.autorizacao.outputs.gravar == 'sim'
+        run: python scripts/verificar_turso.py --modo estrutura
+      - name: 5. Persistência (somente leitura)
+        if: steps.autorizacao.outputs.gravar == 'sim'
+        run: python scripts/verificar_turso.py --modo persistencia --horas "$ENTRADA_HORAS"

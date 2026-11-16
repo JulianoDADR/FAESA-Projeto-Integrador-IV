@@ -17,9 +17,10 @@ import httpx
 registro = logging.getLogger("agroanalise.explicacao")
 
 URL_GROQ = "https://api.groq.com/openai/v1/chat/completions"
-MODELO_PADRAO = "llama-3.1-8b-instant"
+MODELO_PADRAO = "openai/gpt-oss-20b"
 TEMPO_LIMITE_S = 5.0
 MAX_CARACTERES = 280
+MAX_TOKENS_GPT_OSS = 512  # inclui os tokens de raciocinio; a saida final continua limitada por MAX_CARACTERES
 
 MENSAGENS_PADRAO = {
     "Verde": "As leituras estão dentro do esperado agora. Siga acompanhando a lavoura e as próximas leituras.",
@@ -117,12 +118,16 @@ def llm_configurado():
 
 
 def montar_mensagens(classe, leitura):
-    """Monta o pedido ao LLM SOMENTE com campos estruturados e ja validados."""
+    """Monta o pedido ao LLM SOMENTE com campos estruturados e ja validados.
+
+    O Groq recomenda, para o GPT-OSS, concentrar as instrucoes na mensagem do usuario em vez de usar `system`.
+    O texto continua fixo no servidor e nenhum campo livre do usuario entra no pedido.
+    """
     dados = (f"Classe: {classe}. Espécie: {leitura['especie']}. "
              f"Umidade do solo: {leitura['umidade_solo']:.0f}%. "
              f"Temperatura: {leitura['temperatura']:.0f} graus. "
              f"Umidade do ar: {leitura['umidade_ar']:.0f}%.")
-    return [{"role": "system", "content": INSTRUCAO_SISTEMA}, {"role": "user", "content": dados}]
+    return [{"role": "user", "content": f"{INSTRUCAO_SISTEMA}\n\nDados da leitura:\n{dados}"}]
 
 
 def _chamar_llm(mensagens):
@@ -130,8 +135,12 @@ def _chamar_llm(mensagens):
     chave = os.getenv("GROQ_API_KEY")
     if not chave:
         raise RuntimeError("GROQ_API_KEY não configurada")
-    corpo = {"model": os.getenv("GROQ_MODELO", MODELO_PADRAO), "messages": mensagens,
-             "max_tokens": 120, "temperature": 0.3}
+    modelo = os.getenv("GROQ_MODELO", MODELO_PADRAO)
+    corpo = {"model": modelo, "messages": mensagens, "temperature": 0.3}
+    if modelo.startswith("openai/gpt-oss"):
+        corpo |= {"max_completion_tokens": MAX_TOKENS_GPT_OSS, "reasoning_effort": "low", "include_reasoning": False}
+    else:  # compatibilidade com modelos anteriores, que usam max_tokens
+        corpo["max_tokens"] = 120
     inicio = time.monotonic()
     resposta = httpx.post(URL_GROQ, json=corpo, headers={"Authorization": f"Bearer {chave}"},
                           timeout=TEMPO_LIMITE_S)
@@ -151,7 +160,14 @@ _PRODUTOS = re.compile(r"\b(dose|doses|litros?|adubo|adubar|fertiliz\w*|fungicid
 # Ordens de manejo (mesmo sem numeros): o sistema nao recomenda manejo, so pede para olhar a lavoura.
 # Acrescentado depois da avaliacao de 2026-11-15 (docs/avaliacao/llm.md), em que "Regue bastante a lavoura" passou.
 _MANEJO = re.compile(r"\b(regue|reguem|regar|irrigue|irriguem|irrigar|aplique|apliquem|aplicar|adube|pulverize|pulverizar|molhe|molhar)\b", re.I)
-_PROIBIDO_VERDE = re.compile(r"cr[ií]tic|urgen|grave|perig|risco|preocup|aten[cç][aã]o", re.I)
+_PROIBIDO_VERDE = re.compile(
+    r"cr[ií]tic|urgen|grave|perig|risco|preocup|aten[cç][aã]o"
+    # Falso alarme (relatorio, Quadro 3: Verde = tom calmo). Simetrico a regra do Vermelho: Verde nao manda ir a
+    # lavoura com pressa nem sugere dano a planta. Acrescentado em 2026-11-16 pelo principio, nao pelas palavras do
+    # banco de avaliacao; testado com frases novas em testes/test_explicacao.py.
+    r"|\b(v[aá]|corra|corram)\s+(at[eé]|l[aá]|ver|conferir|olhar|checar|verificar)\b"
+    r"|\b(logo|imediatamente|depressa|rapidamente|quanto antes|sem demora|alerta|esperto)\b"
+    r"|\b(sofr\w*|estress\w*|murch\w*|dan[oi]\w*|prejud\w*|preju[ií]z\w*)\b", re.I)
 _PROIBIDO_AMARELO = re.compile(r"cr[ií]tic|urgen|grave|perig|tudo (bem|certo)|tranquil|[oó]tim", re.I)
 _PROIBIDO_VERMELHO = re.compile(r"tudo (bem|certo)|tranquil|[oó]tim|sem problema|dentro do (ideal|esperado)|condi[cç][oõ]es (ideais|boas)", re.I)
 _PROIBIDO = {"Verde": _PROIBIDO_VERDE, "Amarelo": _PROIBIDO_AMARELO, "Vermelho": _PROIBIDO_VERMELHO}

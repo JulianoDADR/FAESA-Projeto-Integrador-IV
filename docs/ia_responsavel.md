@@ -8,7 +8,7 @@ comprova cada ponto.
 | Componente | Decide a cor? | O que faz | Comprovação |
 |---|---|---|---|
 | Classificador (árvore de decisão, Scikit-Learn) | **Sim** | Classifica solo, temperatura e ar em Ideal, Atenção ou Ação crítica | `docs/avaliacao/classificador.md` |
-| LLM (Groq, `llama-3.1-8b-instant`) | **Não** | Reescreve a classe já decidida em até 2 frases simples | `docs/avaliacao/llm.md`; `app/explicacao.py` |
+| LLM (Groq, `openai/gpt-oss-20b`) | **Não** | Reescreve a classe já decidida em até 2 frases simples | `docs/avaliacao/llm.md`; `app/explicacao.py` |
 
 Sem o LLM (sem chave, falha, cota estourada ou saída rejeitada), o semáforo funciona com mensagens-padrão.
 
@@ -27,7 +27,8 @@ Sem o LLM (sem chave, falha, cota estourada ou saída rejeitada), o semáforo fu
 - Entrada do LLM só estruturada e validada; campos extras e texto livre são recusados com 422 antes de chegar ao
   modelo. Na avaliação, os 6 casos de borda (incluindo 3 tentativas de injeção) foram recusados e **nenhum chegou
   ao LLM**.
-- Instruções do sistema fixas no servidor; saída limitada a 120 tokens e filtrada.
+- Instruções fixas no servidor, enviadas numa única mensagem `user` junto com os dados estruturados; saída limitada
+  (512 tokens de conclusão no GPT-OSS) e filtrada.
 - Ingestão de leituras só com token de dispositivo; limite de pedidos, corpo máximo e cabeçalhos de segurança.
 - Segredos só em variáveis de ambiente; a chave nunca aparece em log (`testes/test_llm_http.py`).
 
@@ -56,5 +57,6 @@ Sem o LLM (sem chave, falha, cota estourada ou saída rejeitada), o semáforo fu
 
 - Plano gratuito do Groq: cache por faixa de valores, respostas curtas, teto por minuto e por dia; uso do dia
   (chamadas e tokens) em `GET /saude`.
-- Servidor gratuito: sem custo fixo, com limitações declaradas (sono, disco efêmero).
+- Vercel + Turso (planos gratuitos): sem custo fixo, com limitações declaradas (cold start, função sem tarefa em
+  segundo plano e disco efêmero; a persistência fica no Turso).
 - Custos do hardware: **[a registrar pelo grupo quando o circuito for montado]** (relatório, seção 10.4).

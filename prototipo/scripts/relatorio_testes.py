@@ -2,6 +2,7 @@
 
 Uso (dentro de prototipo/):  python scripts/relatorio_testes.py
 """
+import platform
 import re
 import subprocess
 import sys
@@ -33,6 +34,15 @@ CENARIOS = [
     ("Integração", "API ↔ banco: ingestão autenticada e idempotente", "401/503 sem token; 409 em conflito; sem duplicar",
      ["test_ingestao.py::test_token", "test_ingestao.py::test_sem_token", "test_ingestao.py::test_reenvio",
       "test_ingestao.py::test_requisicoes_malformadas"]),
+    ("Integração", "Banco Turso/libSQL e fail-soft da demonstração",
+     "URL e token separados; 503 nas rotas de banco; página e /status seguem no ar",
+     ["test_banco_turso.py::"]),
+    ("Integração", "Diagnóstico do Turso: conexão, estrutura, persistência e semeadura autorizada (SQLite local)",
+     "banco vazio não é falha de conexão; escrita só com confirmação; repetição não duplica; sem vazar token/URL",
+     ["test_verificar_turso.py::"]),
+    ("Integração", "Driver libSQL (sqlite+libsql em arquivo local, sem Turso real)",
+     "importa, cria tabelas, insere, consulta, reabre e trata erros; no Linux a falta do driver é falha",
+     ["test_driver_libsql.py::"]),
     ("Ponta a ponta", "Gateway simulado → API → classificação → /status", "talhões classificados e marcados como simulados",
      ["test_gateway.py::test_ponta_a_ponta"]),
     ("Falha", "Sensor desconectado (leitura bruta no extremo do ADC)", "linha descartada com motivo",
@@ -78,6 +88,9 @@ def ler_resultados(xml):
     return resultados
 
 
+ICONES = {"aprovado": "✅", "pulado": "⏭️ (pulado)", "reprovado": "❌"}
+
+
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -88,13 +101,23 @@ def main():
     resumo = next((l for l in reversed(saida) if re.search(r"\d+ (passed|failed)", l)), "")
     total = len(resultados)
     aprovados = sum(v == "aprovado" for v in resultados.values())
+    pulados = sum(v == "pulado" for v in resultados.values())
+    reprovados = total - aprovados - pulados
+    ambiente = f"{platform.system()} {platform.release()}, Python {platform.python_version()}"
 
     linhas = []
     for tipo, cenario, esperado, prefixos in CENARIOS:
         cobertos = [n for n in resultados if any(n.startswith(p) for p in prefixos)]
         ok = [n for n in cobertos if resultados[n] == "aprovado"]
-        situacao = "aprovado" if cobertos and len(ok) == len(cobertos) else ("sem teste" if not cobertos else "reprovado")
-        obtido = f"{len(ok)} de {len(cobertos)} testes passaram"
+        pulados_aqui = [n for n in cobertos if resultados[n] == "pulado"]
+        executados = len(cobertos) - len(pulados_aqui)
+        if not cobertos:
+            situacao = "sem teste"
+        elif executados == 0:
+            situacao = "pulado neste ambiente"
+        else:
+            situacao = "aprovado" if len(ok) == executados else "reprovado"
+        obtido = f"{len(ok)} de {len(cobertos)} testes passaram" + (f" ({len(pulados_aqui)} pulados)" if pulados_aqui else "")
         linhas.append(f"| {tipo} | {cenario} | {esperado} | {obtido} | **{situacao}** |")
 
     por_arquivo = {}
@@ -104,16 +127,18 @@ def main():
     lista = []
     for arquivo, testes in por_arquivo.items():
         lista.append(f"\n### `testes/{arquivo}` ({sum(s == 'aprovado' for _, s in testes)} de {len(testes)})\n")
-        lista += [f"- {'✅' if s == 'aprovado' else '❌'} `{t}`" for t, s in testes]
+        lista += [f"- {ICONES[s]} `{t}`" for t, s in testes]
 
     texto = f"""# Testes automatizados
 
 Gerado por `python scripts/relatorio_testes.py` (dentro de `prototipo/`) em
-{datetime.now(timezone.utc).isoformat(timespec="seconds")}, a partir de uma execução real do `pytest`.
-O mesmo `pytest` roda no GitHub Actions a cada push (`.github/workflows/testes.yml`), sem segredos: o LLM é sempre
-simulado e cada teste usa um banco SQLite temporário.
+{datetime.now(timezone.utc).isoformat(timespec="seconds")}, a partir de uma execução real do `pytest` em **{ambiente}**.
+O LLM é sempre simulado e cada teste usa um banco SQLite temporário (nenhum teste usa rede, Groq real ou Turso real).
+No Windows o driver libSQL não é instalado e os testes de `test_driver_libsql.py` são **pulados**; eles só rodam no
+GitHub Actions (Ubuntu, Python 3.13, `.github/workflows/testes.yml`), onde a falta do driver é falha. A contagem final
+de referência do C3 é a da execução da CI, não a desta máquina.
 
-**Resultado: {aprovados} de {total} testes aprovados** (`{resumo}`).
+**Resultado: {aprovados} aprovados, {pulados} pulados e {reprovados} reprovados, de {total} testes** (`{resumo}`).
 
 ## Cenários exigidos (relatório, seção 7.6) e o que cobre cada um
 
@@ -127,13 +152,15 @@ simulado e cada teste usa um banco SQLite temporário.
 - A qualidade das mensagens do Groq real (só com `python ml/avaliar_llm.py --ao-vivo` e revisão humana).
 - A renderização visual das páginas e a voz do botão “Ouvir” (verificadas à mão e com o Chrome sem interface,
   fora do `pytest`; a acessibilidade foi medida com o Lighthouse).
-- A imagem Docker e o deploy real (o teste de fumaça `scripts/teste_fumaca.py` roda contra a URL pública).
+- O deploy real na Vercel e a conexão real com um banco Turso (o teste de fumaça `scripts/teste_fumaca.py` roda contra
+  a URL pública; a conexão Turso é validada pelo workflow manual `turso-validar-semeadura` no GitHub Actions e só deve
+  ser considerada validada após a execução remota bem-sucedida).
 
 ## Lista completa
 {chr(10).join(lista)}
 """
     SAIDA.write_text(texto, encoding="utf-8")
-    print(f"{aprovados} de {total} aprovados · {resumo}")
+    print(f"{aprovados} aprovados, {pulados} pulados, {reprovados} reprovados de {total} · {resumo}")
     print(f"Relatório em {SAIDA}")
     return codigo
 

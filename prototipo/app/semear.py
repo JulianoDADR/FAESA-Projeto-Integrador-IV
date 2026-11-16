@@ -3,8 +3,9 @@
 Uso (dentro de prototipo/):  python -m app.semear --horas 72
 
 Usa a mesma FonteSimulada das paginas, alinhada ao relogio de Brasilia (a leitura das 15h e a do "15:00" simulado),
-uma leitura por talhao a cada INTERVALO_LEITURA_MIN minutos. Todas com origem = "simulado". Pode rodar de novo:
-leituras que ja existem (mesmo talhao e instante) sao ignoradas.
+uma leitura por talhao a cada INTERVALO_LEITURA_MIN minutos, em uma grade fixa de horarios. Todas com origem =
+"simulado". Pode rodar de novo: leituras que ja existem (mesmo talhao e instante) sao ignoradas, mesmo se a execucao
+ocorrer minutos depois. Uma nova leitura em um intervalo posterior da grade e permitida.
 """
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -16,6 +17,14 @@ from app.fontes import FUSO_EXIBICAO, MINUTOS_POR_PASSO, TALHOES, FonteSimulada
 from app.indicadores import intervalo_leitura_min
 
 
+def _alinhar_grade(instante, intervalo_minutos):
+    """Arredonda para baixo ate o inicio do intervalo (grade fixa em UTC, sem segundos)."""
+    instante = instante.astimezone(timezone.utc).replace(second=0, microsecond=0)
+    minutos = int(instante.timestamp() // 60)
+    resto = minutos % intervalo_minutos
+    return instante - timedelta(minutes=resto)
+
+
 def passo_do_instante(instante):
     """Passo do simulador cuja hora simulada coincide com a hora de Brasilia do instante."""
     local = instante.astimezone(FUSO_EXIBICAO)
@@ -24,14 +33,16 @@ def passo_do_instante(instante):
 
 
 def semear(horas=72, agora=None, intervalo_min=None):
-    agora = (agora or banco.agora_utc()).replace(second=0, microsecond=0)
-    intervalo = timedelta(minutes=intervalo_min or intervalo_leitura_min())
+    intervalo_minutos = int(intervalo_min or intervalo_leitura_min())
+    intervalo = timedelta(minutes=intervalo_minutos)
+    agora = _alinhar_grade(agora or banco.agora_utc(), intervalo_minutos)
+    inicio = agora - timedelta(hours=horas)
     fonte = FonteSimulada()
     gravadas = ignoradas = 0
     with banco.sessao() as s:
         existentes = {(t, c) for t, c in s.execute(select(banco.Leitura.talhao_id, banco.Leitura.coletado_em).where(
-            banco.Leitura.coletado_em > agora - timedelta(hours=horas)))}
-        instante = agora - timedelta(hours=horas) + intervalo
+            banco.Leitura.coletado_em >= inicio, banco.Leitura.coletado_em <= agora))}
+        instante = inicio + intervalo
         while instante <= agora:
             passo = passo_do_instante(instante)
             for talhao in TALHOES:
@@ -45,10 +56,11 @@ def semear(horas=72, agora=None, intervalo_min=None):
                                     recebido_em=agora, origem="simulado", valida=True,
                                     umidade_solo=leitura["umidade_solo"], temperatura=leitura["temperatura"],
                                     umidade_ar=leitura["umidade_ar"]))
+                existentes.add((talhao["id"], instante))
                 gravadas += 1
             instante += intervalo
         s.commit()
-    return {"gravadas": gravadas, "ignoradas": ignoradas, "horas": horas, "intervalo_min": intervalo.total_seconds() / 60}
+    return {"gravadas": gravadas, "ignoradas": ignoradas, "horas": horas, "intervalo_min": intervalo_minutos}
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ com o próprio usuário Git e registra o próprio uso de IA em `docs/uso-de-ia/R
 
 - Revisar os textos das orientações do mapa de riscos (`prototipo/app/riscos/orientacoes.json`, campo
   `revisado_por_humano`); os números 199 e 193 já foram confirmados em fonte oficial em 15/11/2026.
-- Conferir os limites do plano gratuito do Groq e do Render (`docs/fontes.md`); a política de uso dos tiles do
-  OpenStreetMap foi conferida em 15/11/2026 e o uso atual do mapa está compatível.
+- Conferir os limites dos planos gratuitos do Groq, da Vercel e do Turso (`docs/fontes.md`); a política de uso dos
+  tiles do OpenStreetMap foi conferida em 15/11/2026 e o uso atual do mapa está compatível.
 - Decidir se o mapa de riscos entra no relatório (`docs/AMPLIACAO_DE_ESCOPO.md`).
 - Confirmar no AVA a data vigente de entrega do C3 (04/12/2026 pelo edital).

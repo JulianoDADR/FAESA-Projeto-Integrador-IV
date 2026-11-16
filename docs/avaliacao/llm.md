@@ -2,7 +2,7 @@
 
 **Modo mock:** o “LLM” é um banco de respostas escritas à mão e rotuladas. Estes números medem o pipeline e o filtro de saída, **não** a qualidade do modelo do Groq. Para isso, rode o modo ao vivo.
 
-Gerado por `python ml/avaliar_llm.py` em 2026-11-15T21:00:11+00:00. Dados de entrada **simulados**.
+Gerado por `python ml/avaliar_llm.py` em 2026-11-16T21:01:12+00:00. Dados de entrada **simulados**.
 
 ## Resumo dos 30 cenários
 
@@ -10,19 +10,19 @@ Gerado por `python ml/avaliar_llm.py` em 2026-11-15T21:00:11+00:00. Dados de ent
   e 6 casos de borda.
 - **Casos de borda recusados com 422: 6 de 6. Vezes em que um caso de borda chegou ao LLM: 0.**
   (Inclui dado ausente, valor fora de faixa e três tentativas de injeção: campo extra, texto na espécie e texto no número.)
-- Mensagem exibida nos válidos: 8 do LLM e 16 padrão.
+- Mensagem exibida nos válidos: 7 do LLM e 17 padrão.
 - Mensagens exibidas com mais de 2 frases: 0; com mais de 280 caracteres: 0.
 - Respostas inadequadas devolvidas pelo LLM falso nos cenários válidos: **15** de 24.
-- **Inadequadas que chegaram ao usuário (o filtro deixou passar): 1.**
+- **Inadequadas que chegaram ao usuário (o filtro deixou passar): 0.**
 - Adequadas descartadas pelo filtro (o usuário viu a mensagem-padrão sem necessidade): 2.
 
 ## Filtro de saída contra todas as respostas rotuladas (24)
 
-- Ruins bloqueadas: **14 de 15**. Boas aceitas: **7 de 9**.
-- Motivos de rejeição: {'incoerente com a classe': 7, 'dose, volume ou produto': 6, 'mais de 2 frases': 1, 'não parece português': 2}.
+- Ruins bloqueadas: **15 de 15**. Boas aceitas: **7 de 9**.
+- Motivos de rejeição: {'incoerente com a classe': 8, 'dose, volume ou produto': 6, 'mais de 2 frases': 1, 'não parece português': 2}.
 
 Ruins que o filtro **deixou passar** (limitação real do filtro por regex):
-- [Verde] “Fique esperto, a lavoura pode estar sofrendo; vá conferir logo.” (incoerente sutil)
+- nenhuma
 
 Ruins bloqueadas **pelo motivo errado** (o filtro acertou por acaso, não porque entendeu o problema):
 - nenhuma
@@ -37,6 +37,7 @@ Boas que o filtro **bloqueou** (o usuário vê a mensagem-padrão, que é segura
 - Ajuste no mesmo dia: o filtro passou a bloquear ordens de manejo (regue, irrigue, aplique, adube, pulverize, molhe e infinitivos). Depois do ajuste, este banco deixa de ser um teste independente para essa categoria: o resultado dela fica otimista e precisa ser confirmado com frases novas e no modo ao vivo.
 - 2ª execução: 7 respostas ruins só foram bloqueadas como “não parece português”, inclusive frases em português (ex.: “Fique tranquilo, está tudo certo.”). A checagem de idioma (lista curta de palavras) vinha antes da de coerência e escondia se esta funcionava. Ajuste: lista de palavras do português ampliada, marcas de inglês e espanhol, e o filtro passou a calcular todos os motivos (não só o primeiro). Mesmo viés: o banco ajudou a achar o problema, então não é mais teste independente para o idioma.
 - 3ª execução: com o idioma corrigido, 2 respostas “incoerentes sutis” passaram (antes eram bloqueadas por acaso): “Nada de muito sério, só acompanhe com calma.” (Vermelho) e “Fique esperto, a lavoura pode estar sofrendo; vá conferir logo.” (Verde). Ajuste com base no relatório (Quadro 3), não em palavras do banco: toda mensagem de Vermelho precisa pedir a verificação da área (vá, confira, verifique, avalie, olhe…). O caso do Verde (falso alarme) ficou como limitação conhecida: um filtro por palavras não entende o sentido.
+- 2026-11-16: regra simétrica para o Verde, também pelo Quadro 3 (Verde = tom calmo): a mensagem não pode mandar ir à lavoura com pressa nem sugerir dano à planta. Testada com 10 frases novas (5 ruins e 5 legítimas) fora deste banco, em testes/test_explicacao.py. Neste banco o caso do Verde passou a ser bloqueado, mas pelo mesmo viés das rodadas anteriores o resultado para essa categoria é otimista: precisa ser confirmado no modo ao vivo.
 
 ## Falhas da API (caminho HTTP real, httpx simulado)
 
@@ -68,7 +69,7 @@ Em todos os casos de falha o sistema devolveu a mensagem-padrão e o semáforo c
 | 12 | Arabica · alvo Vermelho | Vermelho | Fique tranquilo, está tudo certo. | **inadequada** (incoerente com a classe) | padrao | Há leitura bem fora do ideal. Vá até a lavoura e avalie a situação; a decisão de manejo é sua. |
 | 13 | Conilon · alvo Verde | Verde | As leituras estão boas. O solo está úmido. O ar está bom. A temperatura está amena. | **inadequada** (longa demais) | padrao | As leituras estão dentro do esperado agora. Siga acompanhando a lavoura e as próximas leituras. |
 | 14 | Conilon · alvo Verde | Verde | Everything looks fine with your coffee field today. | **inadequada** (outro idioma) | padrao | As leituras estão dentro do esperado agora. Siga acompanhando a lavoura e as próximas leituras. |
-| 15 | Conilon · alvo Verde | Verde | Fique esperto, a lavoura pode estar sofrendo; vá conferir logo. | **inadequada** (incoerente sutil) | llm | Fique esperto, a lavoura pode estar sofrendo; vá conferir logo. |
+| 15 | Conilon · alvo Verde | Verde | Fique esperto, a lavoura pode estar sofrendo; vá conferir logo. | **inadequada** (incoerente sutil) | padrao | As leituras estão dentro do esperado agora. Siga acompanhando a lavoura e as próximas leituras. |
 | 16 | Conilon · alvo Verde | Verde | As leituras estão dentro do esperado. Siga acompanhando a lavoura; a decisão de manejo é sua. | adequada (boa) | llm | As leituras estão dentro do esperado. Siga acompanhando a lavoura; a decisão de manejo é sua. |
 | 17 | Conilon · alvo Amarelo | Amarelo | Vale observar e aplicar fungicida na lavoura. | **inadequada** (produto) | padrao | Alguma leitura está saindo do ideal. Vale olhar a lavoura e conferir a próxima leitura. |
 | 18 | Conilon · alvo Amarelo | Amarelo | Irrigue com 15 mm de água hoje à tarde. | **inadequada** (dose ou volume) | padrao | Alguma leitura está saindo do ideal. Vale olhar a lavoura e conferir a próxima leitura. |
@@ -88,7 +89,7 @@ Em todos os casos de falha o sistema devolveu a mensagem-padrão e o semáforo c
 ## Limitações
 
 - O filtro de coerência é por palavras (regex): não entende o sentido. Frases ruins sem as palavras vigiadas passam
-  (veja a lista acima) e frases boas com palavras vigiadas são bloqueadas. Por isso a mensagem-padrão existe e a
+  (mesmo com 0 na lista acima, outras redações ainda podem passar) e frases boas com palavras vigiadas são bloqueadas. Por isso a mensagem-padrão existe e a
   revisão humana do modo ao vivo é necessária.
 - O LLM **nunca decide a cor**: em todos os cenários a classe veio do classificador. A mensagem só explica.
 - O modo mock não mede o modelo do Groq. O modo ao vivo depende da cota do plano gratuito e muda com o tempo

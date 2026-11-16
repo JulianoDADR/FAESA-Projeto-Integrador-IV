@@ -16,9 +16,11 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import SQLAlchemyError
 
 from app import (alimentador, banco, classificador, explicacao, faixas, fontes, indicadores, ingestao, riscos, seguranca,
                  servico)
+from app.banco import BancoIndisponivel
 from app.validacao import ErroValidacao
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -50,6 +52,7 @@ def saude():
             "llm_configurado": explicacao.llm_configurado(), "llm_uso": explicacao.uso_do_llm(),
             "modo_demonstracao": True, "modo_demo": seguranca.modo_demo(),
             "fonte_leituras": fontes.fonte_ativa().nome, "banco": banco.descrever_url(),
+            "banco_disponivel": banco.verificar(),
             "recebimento_leituras_ligado": ingestao.token_configurado(), "alimentador_demo": alimentador.ligado()}
 
 
@@ -199,18 +202,39 @@ def riscos_da_regiao(regiao_id: str):
             "camadas": provedor.camadas(regiao_id)}
 
 
+def _fonte_configurada_e_banco():
+    return (os.getenv("FONTE_LEITURAS") or "simulada").strip().lower() == "banco"
+
+
 @asynccontextmanager
 async def ciclo_de_vida(_app):
-    banco.configurar()  # cria as tabelas se ainda nao existirem (migracao simples)
-    if os.getenv("SEMEAR_SE_VAZIO", "").strip().lower() in ("1", "true", "sim") and banco.contar_leituras() == 0:
-        from app.semear import semear
-        registro.info("Banco vazio: semente de leituras simuladas: %s", await run_in_threadpool(semear, 72))
+    banco_ok = False
+    try:
+        banco.configurar()  # cria as tabelas se ainda nao existirem (migracao simples)
+        banco_ok = True
+    except Exception as erro:  # fail-soft: a demonstracao simulada nao depende do banco
+        registro.warning("Banco indisponível no startup (%s); seguindo com a fonte configurada.",
+                         type(erro).__name__)
+        if _fonte_configurada_e_banco():
+            raise
+    if banco_ok and os.getenv("SEMEAR_SE_VAZIO", "").strip().lower() in ("1", "true", "sim"):
+        try:
+            if banco.contar_leituras() == 0:
+                from app.semear import semear
+                registro.info("Banco vazio: semente de leituras simuladas: %s", await run_in_threadpool(semear, 72))
+        except Exception as erro:
+            registro.warning("Falha ao consultar/semear o banco (%s).", type(erro).__name__)
+            if _fonte_configurada_e_banco():
+                raise
     tarefa = asyncio.create_task(alimentador.laco()) if alimentador.ligado() else None
-    yield
-    if tarefa:
-        tarefa.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await tarefa
+    try:
+        yield
+    finally:
+        if tarefa:
+            tarefa.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await tarefa
+        banco.fechar()
 
 
 def criar_app():
@@ -235,6 +259,14 @@ def criar_app():
         aplicacao.add_middleware(CORSMiddleware, allow_origins=origens, allow_methods=["GET", "POST"],
                                  allow_headers=["Authorization", "Content-Type"])
     aplicacao.add_middleware(seguranca.LimiteDeCorpo)
+
+    @aplicacao.exception_handler(BancoIndisponivel)
+    @aplicacao.exception_handler(SQLAlchemyError)
+    async def banco_indisponivel(requisicao: Request, erro: Exception):
+        registro.warning("Banco indisponível em %s (%s).", requisicao.url.path, type(erro).__name__)
+        return JSONResponse(status_code=503, headers={"Retry-After": "5"}, content={
+            "erros": ["Banco de dados indisponível no momento. Tente novamente em instantes."]})
+
     aplicacao.include_router(rotas)
     # Paginas estaticas por ultimo, para nao esconder as rotas da API.
     aplicacao.mount("/", StaticFiles(directory=RAIZ / "web", html=True), name="web")

@@ -9,3 +9,5 @@ pytest==9.2.0
 python-dotenv==1.2.4
 sqlalchemy==2.1.6
 pyserial==3.5
+sqlalchemy-libsql==0.2.0; sys_platform != "win32"
+libsql-experimental==0.0.55; sys_platform != "win32"

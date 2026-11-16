@@ -1,11 +1,13 @@
 # Testes automatizados
 
 Gerado por `python scripts/relatorio_testes.py` (dentro de `prototipo/`) em
-2026-11-15T22:02:41+00:00, a partir de uma execução real do `pytest`.
-O mesmo `pytest` roda no GitHub Actions a cada push (`.github/workflows/testes.yml`), sem segredos: o LLM é sempre
-simulado e cada teste usa um banco SQLite temporário.
+2026-11-16T21:06:02+00:00, a partir de uma execução real do `pytest` em **Windows 11, Python 3.13.16**.
+O LLM é sempre simulado e cada teste usa um banco SQLite temporário (nenhum teste usa rede, Groq real ou Turso real).
+No Windows o driver libSQL não é instalado e os testes de `test_driver_libsql.py` são **pulados**; eles só rodam no
+GitHub Actions (Ubuntu, Python 3.13, `.github/workflows/testes.yml`), onde a falta do driver é falha. A contagem final
+de referência do C3 é a da execução da CI, não a desta máquina.
 
-**Resultado: 205 de 205 testes aprovados** (`205 passed, 1 warning in 7.37s`).
+**Resultado: 245 aprovados, 6 pulados e 0 reprovados, de 251 testes** (`245 passed, 6 skipped, 1 warning in 9.31s`).
 
 ## Cenários exigidos (relatório, seção 7.6) e o que cobre cada um
 
@@ -14,11 +16,14 @@ simulado e cada teste usa um banco SQLite temporário.
 | Unitário | Validação de leituras (faixa, tipo, campo ausente, espécie) | 422 e nenhuma cor | 9 de 9 testes passaram | **aprovado** |
 | Unitário | Conversão e tratamento da linha serial (protocolo e calibração) | valores convertidos; linha quebrada recusada | 10 de 10 testes passaram | **aprovado** |
 | Unitário | Fonte única das faixas (config/faixas.json) | gerador, validação e API usam o mesmo arquivo | 6 de 6 testes passaram | **aprovado** |
-| Unitário | Escolha da mensagem de contingência | mensagem-padrão quando o LLM falha ou erra | 15 de 15 testes passaram | **aprovado** |
+| Unitário | Escolha da mensagem de contingência | mensagem-padrão quando o LLM falha ou erra | 27 de 27 testes passaram | **aprovado** |
 | Unitário | Regra conservadora do Vermelho (limiar e peso) | nunca tira um Vermelho; desempate documentado | 6 de 6 testes passaram | **aprovado** |
 | Integração | API ↔ modelo ↔ camada de explicação | classe do classificador; LLM só reformula | 9 de 9 testes passaram | **aprovado** |
-| Integração | Caminho HTTP do LLM: 429, timeout, sem rede, JSON malformado, saída incoerente | mensagem-padrão, semáforo segue funcionando, chave fora dos logs | 14 de 14 testes passaram | **aprovado** |
+| Integração | Caminho HTTP do LLM: 429, timeout, sem rede, JSON malformado, saída incoerente | mensagem-padrão, semáforo segue funcionando, chave fora dos logs | 15 de 15 testes passaram | **aprovado** |
 | Integração | API ↔ banco: ingestão autenticada e idempotente | 401/503 sem token; 409 em conflito; sem duplicar | 16 de 16 testes passaram | **aprovado** |
+| Integração | Banco Turso/libSQL e fail-soft da demonstração | URL e token separados; 503 nas rotas de banco; página e /status seguem no ar | 13 de 13 testes passaram | **aprovado** |
+| Integração | Diagnóstico do Turso: conexão, estrutura, persistência e semeadura autorizada (SQLite local) | banco vazio não é falha de conexão; escrita só com confirmação; repetição não duplica; sem vazar token/URL | 13 de 13 testes passaram | **aprovado** |
+| Integração | Driver libSQL (sqlite+libsql em arquivo local, sem Turso real) | importa, cria tabelas, insere, consulta, reabre e trata erros; no Linux a falta do driver é falha | 0 de 6 testes passaram (6 pulados) | **pulado neste ambiente** |
 | Ponta a ponta | Gateway simulado → API → classificação → /status | talhões classificados e marcados como simulados | 1 de 1 testes passaram | **aprovado** |
 | Falha | Sensor desconectado (leitura bruta no extremo do ADC) | linha descartada com motivo | 7 de 7 testes passaram | **aprovado** |
 | Falha | Mensagem serial incompleta | linha descartada com motivo | 14 de 14 testes passaram | **aprovado** |
@@ -38,7 +43,9 @@ simulado e cada teste usa um banco SQLite temporário.
 - A qualidade das mensagens do Groq real (só com `python ml/avaliar_llm.py --ao-vivo` e revisão humana).
 - A renderização visual das páginas e a voz do botão “Ouvir” (verificadas à mão e com o Chrome sem interface,
   fora do `pytest`; a acessibilidade foi medida com o Lighthouse).
-- A imagem Docker e o deploy real (o teste de fumaça `scripts/teste_fumaca.py` roda contra a URL pública).
+- O deploy real na Vercel e a conexão real com um banco Turso (o teste de fumaça `scripts/teste_fumaca.py` roda contra
+  a URL pública; a conexão Turso é validada pelo workflow manual `turso-validar-semeadura` no GitHub Actions e só deve
+  ser considerada validada após a execução remota bem-sucedida).
 
 ## Lista completa
 
@@ -69,6 +76,22 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_ordens_de_manejo_sao_bloqueadas_mesmo_sem_numeros[Vale irrigar a lavoura agora.]`
 - ✅ `test_vermelho_sem_pedido_de_verificacao_e_recusado`
 
+### `testes/test_banco_turso.py` (13 de 13)
+
+- ✅ `test_alimentador_fica_desligado_na_vercel`
+- ✅ `test_banco_local_da_fixture_esta_disponivel`
+- ✅ `test_configurar_sem_url_preserva_conexao_temporaria_ja_configurada`
+- ✅ `test_normalizar_url_do_painel_do_turso`
+- ✅ `test_post_leituras_com_token_valido_e_banco_fora_responde_503`
+- ✅ `test_resolver_conexao_prioriza_turso`
+- ✅ `test_saude_com_turso_configurado_e_fora_do_ar_nao_vaza_credenciais`
+- ✅ `test_saude_continua_respondendo_com_banco_fora`
+- ✅ `test_sem_motor_verificar_nao_quebra`
+- ✅ `test_startup_e_fatal_quando_a_fonte_e_o_banco`
+- ✅ `test_startup_fail_soft_com_fonte_simulada`
+- ✅ `test_turso_com_token_sem_url_falha_cedo`
+- ✅ `test_turso_sem_token_falha_cedo`
+
 ### `testes/test_concorrencia.py` (1 de 1)
 
 - ✅ `test_llm_lento_nao_bloqueia_outras_rotas`
@@ -82,7 +105,16 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_metricas_tem_teto_decisao_e_comparacoes`
 - ✅ `test_sem_limiar_vale_a_maior_proporcao`
 
-### `testes/test_explicacao.py` (15 de 15)
+### `testes/test_driver_libsql.py` (0 de 6)
+
+- ⏭️ (pulado) `test_criar_inserir_consultar_e_reabrir`
+- ⏭️ (pulado) `test_dialeto_sqlite_libsql_carrega`
+- ⏭️ (pulado) `test_driver_libsql_esta_instalado[libsql_experimental]`
+- ⏭️ (pulado) `test_driver_libsql_esta_instalado[sqlalchemy_libsql]`
+- ⏭️ (pulado) `test_erros_do_driver_sao_levantados_e_nao_corrompem_os_dados`
+- ⏭️ (pulado) `test_modulo_banco_configura_libsql_local_e_verifica`
+
+### `testes/test_explicacao.py` (27 de 27)
 
 - ✅ `test_entrada_do_llm_so_tem_campos_estruturados`
 - ✅ `test_llm_bom_e_usado_e_vai_para_o_cache`
@@ -90,6 +122,8 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_mensagens_padrao_passam_na_propria_validacao[Amarelo]`
 - ✅ `test_mensagens_padrao_passam_na_propria_validacao[Verde]`
 - ✅ `test_mensagens_padrao_passam_na_propria_validacao[Vermelho]`
+- ✅ `test_regra_de_falso_alarme_vale_so_para_o_verde[Amarelo-O solo est\xe1 secando. V\xe1 ver a lavoura quando puder; a decis\xe3o \xe9 sua.]`
+- ✅ `test_regra_de_falso_alarme_vale_so_para_o_verde[Vermelho-O solo est\xe1 muito seco. V\xe1 at\xe9 a lavoura logo e avalie; a decis\xe3o de manejo \xe9 sua.]`
 - ✅ `test_saida_com_dose_do_llm_cai_no_padrao`
 - ✅ `test_saida_incoerente_do_llm_cai_no_padrao`
 - ✅ `test_saida_ruim_e_rejeitada[Amarelo-O solo est\xe1 seco, aplique 20 litros de \xe1gua hoje.]`
@@ -99,6 +133,16 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_saida_ruim_e_rejeitada[Verde-The soil is fine today and the crop looks good.]`
 - ✅ `test_saida_ruim_e_rejeitada[Vermelho-Fique tranquilo, o solo est\xe1 \xf3timo.]`
 - ✅ `test_sem_chave_usa_mensagem_padrao`
+- ✅ `test_verde_com_falso_alarme_e_rejeitado[Confira a lavoura imediatamente, pode haver dano nas folhas.]`
+- ✅ `test_verde_com_falso_alarme_e_rejeitado[Corra at\xe9 a lavoura, as plantas podem estar murchando.]`
+- ✅ `test_verde_com_falso_alarme_e_rejeitado[Fique em alerta: o solo pode prejudicar o cafezal.]`
+- ✅ `test_verde_com_falso_alarme_e_rejeitado[O caf\xe9 pode estar estressado com o tempo; v\xe1 ver hoje mesmo.]`
+- ✅ `test_verde_com_falso_alarme_e_rejeitado[V\xe1 l\xe1 conferir sem demora.]`
+- ✅ `test_verde_legitimo_continua_aceito[A lavoura est\xe1 tranquila. Siga acompanhando com calma.]`
+- ✅ `test_verde_legitimo_continua_aceito[As condi\xe7\xf5es est\xe3o boas hoje. Quando quiser, d\xea uma olhada na lavoura.]`
+- ✅ `test_verde_legitimo_continua_aceito[Est\xe1 tudo certo na lavoura agora. Continue acompanhando as pr\xf3ximas leituras.]`
+- ✅ `test_verde_legitimo_continua_aceito[O solo e o ar est\xe3o bons para o caf\xe9. A decis\xe3o de manejo \xe9 sua.]`
+- ✅ `test_verde_legitimo_continua_aceito[Sem problema por enquanto; siga de olho nas leituras.]`
 
 ### `testes/test_faixas.py` (6 de 6)
 
@@ -146,7 +190,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_regras_de_autonomia_ajuda_tempo_e_consentimento`
 - ✅ `test_relatorio_marca_meta_e_nunca_inventa_agua_e_perdas`
 
-### `testes/test_ingestao.py` (31 de 31)
+### `testes/test_ingestao.py` (32 de 32)
 
 - ✅ `test_disponibilidade_conta_validas_sobre_esperadas`
 - ✅ `test_fonte_banco_mostra_a_leitura_mais_recente`
@@ -170,6 +214,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_requisicoes_malformadas_sao_recusadas[corpo9-objeto]`
 - ✅ `test_rota_disponibilidade`
 - ✅ `test_sem_token_configurado_o_recebimento_fica_desligado`
+- ✅ `test_semente_em_grade_fixa_nao_duplica_apos_minutos_e_permite_intervalo_posterior`
 - ✅ `test_semente_grava_simulado_alinhado_ao_relogio_e_pode_rodar_de_novo`
 - ✅ `test_simulador_continua_simulado_mesmo_com_fonte_banco`
 - ✅ `test_status_com_banco_classifica_pelo_mesmo_caminho`
@@ -217,7 +262,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[sobre.html]`
 - ✅ `test_toda_pagina_tem_comum_js_icone_e_idioma[talhoes.html]`
 
-### `testes/test_llm_http.py` (14 de 14)
+### `testes/test_llm_http.py` (15 de 15)
 
 - ✅ `test_cache_evita_segunda_chamada_na_mesma_faixa`
 - ✅ `test_chave_nunca_aparece_nos_logs`
@@ -228,6 +273,7 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_falhas_do_provedor_viram_mensagem_padrao[efeito4-503]`
 - ✅ `test_falhas_do_provedor_viram_mensagem_padrao[efeito5-JSON malformado]`
 - ✅ `test_falhas_do_provedor_viram_mensagem_padrao[efeito6-sem escolhas]`
+- ✅ `test_modelo_padrao_gpt_oss_usa_parametros_de_raciocinio`
 - ✅ `test_pedido_ao_groq_tem_modelo_limites_e_token_no_cabecalho`
 - ✅ `test_saida_ruim_pelo_http_vira_mensagem_padrao_e_e_contada[Aplique 30 litros de \xe1gua por planta agora.]`
 - ✅ `test_saida_ruim_pelo_http_vira_mensagem_padrao_e_e_contada[Everything is fine.]`
@@ -291,3 +337,19 @@ simulado e cada teste usa um banco SQLite temporário.
 - ✅ `test_valores_invalidos_sao_recusados[umidade_ar-muito]`
 - ✅ `test_valores_invalidos_sao_recusados[umidade_solo--1]`
 - ✅ `test_valores_invalidos_sao_recusados[umidade_solo-140]`
+
+### `testes/test_verificar_turso.py` (13 de 13)
+
+- ✅ `test_conexao_em_banco_vazio_nao_e_falha_e_nao_cria_tabelas`
+- ✅ `test_diagnostico_recusa_sqlite_local`
+- ✅ `test_estrutura_detecta_restricao_unica_ausente`
+- ✅ `test_estrutura_falha_em_banco_vazio_e_passa_com_o_modelo`
+- ✅ `test_horas_fora_da_lista_sao_recusadas[1000]`
+- ✅ `test_horas_fora_da_lista_sao_recusadas[12]`
+- ✅ `test_horas_fora_da_lista_sao_recusadas[72; rm -rf /]`
+- ✅ `test_horas_fora_da_lista_sao_recusadas[abc]`
+- ✅ `test_mensagens_nao_vazam_token_nem_url`
+- ✅ `test_modo_semear_sem_confirmacao_e_recusado_antes_de_conectar`
+- ✅ `test_persistencia_detecta_banco_sem_leituras`
+- ✅ `test_persistencia_detecta_duplicacao_quando_a_restricao_falta`
+- ✅ `test_semear_e_comprovar_cria_tabelas_e_repeticao_nao_duplica`

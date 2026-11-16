@@ -1,7 +1,7 @@
 {
   "modo": "mock",
   "comando": "python ml/avaliar_llm.py",
-  "gerado_em": "2026-11-15T21:00:11+00:00",
+  "gerado_em": "2026-11-16T21:01:12+00:00",
   "modelo": "LLM falso (banco de respostas rotuladas)",
   "resumo": {
     "cenarios": 30,
@@ -16,12 +16,12 @@
     "borda_chamou_llm": 0,
     "validos_chamaram_llm": 24,
     "validos_sem_chamada_por_teto": 0,
-    "mensagem_do_llm_exibida": 8,
-    "mensagem_padrao_exibida": 16,
+    "mensagem_do_llm_exibida": 7,
+    "mensagem_padrao_exibida": 17,
     "exibidas_com_mais_de_2_frases": 0,
     "exibidas_com_mais_de_280_caracteres": 0,
     "respostas_inadequadas_do_llm": 15,
-    "inadequadas_exibidas_ao_usuario": 1,
+    "inadequadas_exibidas_ao_usuario": 0,
     "adequadas_descartadas_pelo_filtro": 2
   },
   "cenarios": [
@@ -443,8 +443,8 @@
       },
       "status": 200,
       "classe": "Verde",
-      "mensagem_exibida": "Fique esperto, a lavoura pode estar sofrendo; vá conferir logo.",
-      "origem_mensagem": "llm",
+      "mensagem_exibida": "As leituras estão dentro do esperado agora. Siga acompanhando a lavoura e as próximas leituras.",
+      "origem_mensagem": "padrao",
       "llm_chamado": true,
       "teto_segurou": false,
       "resposta_llm": {
@@ -453,9 +453,9 @@
         "tipo": "incoerente sutil"
       },
       "texto_exibido": {
-        "caracteres": 63,
-        "frases": 1,
-        "palavras": 10,
+        "caracteres": 95,
+        "frases": 2,
+        "palavras": 15,
         "palavras_longas": 0,
         "tem_digito": false
       }
@@ -852,19 +852,9 @@
     "respostas": 24,
     "ruins": 15,
     "boas": 9,
-    "ruins_bloqueadas": 14,
+    "ruins_bloqueadas": 15,
     "boas_aceitas": 7,
-    "ruins_que_passaram": [
-      {
-        "classe": "Verde",
-        "texto": "Fique esperto, a lavoura pode estar sofrendo; vá conferir logo.",
-        "adequada": false,
-        "tipo": "incoerente sutil",
-        "filtro_aceitou": true,
-        "motivo_rejeicao": null,
-        "todos_os_motivos": []
-      }
-    ],
+    "ruins_que_passaram": [],
     "boas_bloqueadas": [
       {
         "classe": "Verde",
@@ -890,7 +880,7 @@
       }
     ],
     "motivos": {
-      "incoerente com a classe": 7,
+      "incoerente com a classe": 8,
       "dose, volume ou produto": 6,
       "mais de 2 frases": 1,
       "não parece português": 2
@@ -975,9 +965,11 @@
         "texto": "Fique esperto, a lavoura pode estar sofrendo; vá conferir logo.",
         "adequada": false,
         "tipo": "incoerente sutil",
-        "filtro_aceitou": true,
-        "motivo_rejeicao": null,
-        "todos_os_motivos": []
+        "filtro_aceitou": false,
+        "motivo_rejeicao": "incoerente com a classe",
+        "todos_os_motivos": [
+          "incoerente com a classe"
+        ]
       },
       {
         "classe": "Amarelo",

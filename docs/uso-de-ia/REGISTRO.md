@@ -218,3 +218,73 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 - **O que foi aproveitado / alterado:** gerado pela IA e revisado na sessão. A confirmação dos números foi feita em páginas oficiais (não por suposição); a política do OSM foi conferida na página oficial. O campo `revisado_por_humano` continua `false`, porque a revisão humana dos textos das orientações ainda não foi feita. Fora deste lote: driver do Postgres, CI (só roda após o push) e preenchimento dos colchetes (dependem do deploy e do teste com pessoas).
 - **Como foi validado:** `pytest -q` (205 passed, 1 warning); `python scripts/relatorio_testes.py` (205 de 205); servidor local com `uvicorn` e `python scripts/teste_fumaca.py --url http://127.0.0.1:8765` (24 de 24 verificações OK); `git diff` conferido. **Não validado:** URL pública (sem deploy), Postgres e Docker.
 - **Arquivos/commit relacionados:** `prototipo/app/riscos/orientacoes.json`, `prototipo/testes/test_riscos.py`, `prototipo/scripts/teste_fumaca.py`, `docs/fontes.md`, `docs/AMPLIACAO_DE_ESCOPO.md`, `docs/DIVISAO_DE_TRABALHO.md`, `docs/DEPLOY.md`, `docs/video_mvp_roteiro.md`, `docs/testes.md`. Commits a partir de `abe8766` até o commit desta entrada.
+
+## Registro de uso de IA — 2026-11-15: deploy Vercel + Turso/libSQL e Python 3.13
+- **Integrante:** Eduardo (Eduardo Rodrigues R Malaquias)
+- **Ferramenta / modelo:** opencode (modelo big-pickle)
+- **Tarefa:** executar o plano aprovado de migração do deploy para Vercel + Turso/libSQL, atualizar Python para 3.13, implementar fail-soft do banco na demonstração simulada, trocar o modelo do Groq para `openai/gpt-oss-20b` e atualizar testes e documentação.
+- **Prompt utilizado:**
+  > Retomada da sessão após compactação: "What did we do so far?" e "Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed." O prompt original da implementação não está reproduzido integralmente porque a conversa foi compactada; o trabalho seguiu o plano aprovado anteriormente (ver `docs/uso-de-ia/prompts/2026-11-15_plano_c3.md`).
+- **Resultado (resumo):** `app/banco.py` com precedência `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`, `DATABASE_URL` e SQLite local; normalização de `libsql://`/`https://` para `sqlite+libsql://` com `secure=true` (`false` para `http://` local); token só em `connect_args`; `BancoIndisponivel`; `verificar()` e `descrever_url()` sem segredo. `app/principal.py` com lifespan fail-soft (fatal só com `FONTE_LEITURAS=banco`), handlers 503 para banco fora do ar e `/saude` com `banco_disponivel`. `app/alimentador.py` desliga o alimentador quando `VERCEL` existe. `app/explicacao.py` usa `openai/gpt-oss-20b` (prompt em uma única mensagem `user`, `max_completion_tokens=512`, `reasoning_effort=low`, `include_reasoning=False`); o `LLMFalso` de `ml/avaliar_llm.py` foi ajustado para ler essa mensagem e um teste passou a exigir que 8 mensagens do mock cheguem ao usuário. Drivers `sqlalchemy-libsql==0.2.0` e `libsql-experimental==0.0.55` com marcador `sys_platform != "win32"`. Criados `index.py`, `vercel.json`, `.vercelignore`, `.python-version` e `scripts/verificar_turso.py`; `Dockerfile` em Python 3.13 sem retreino; modelo e métricas regenerados com Python 3.13.16/scikit-learn 1.9.1; CI em Python 3.13; documentação de deploy, arquitetura, fontes, IA responsável, READMEs e `.env.example` atualizada.
+- **O que foi aproveitado / alterado:** gerado pela IA e revisado na sessão. Decisões: o frontend e as rotas que não dependem do banco continuam no ar com `FONTE_LEITURAS=simulada`; as rotas de banco devolvem 503; `FONTE_LEITURAS=banco` mantém o startup fatal; o alimentador não roda em função serverless. O token Turso não foi gravado no código, nos testes, nos logs ou na documentação; valores reais ficam apenas em `.env`/painel. A troca do modelo para GPT-OSS foi conferida na lista oficial do Groq; a chamada real não foi feita por ausência de chave.
+- **Como foi validado:** no Windows com Python 3.13.16, `pytest -q` (215 passed, 1 warning) e `python scripts/relatorio_testes.py` (215 de 215; `docs/testes.md` regenerado); normalização de URL e fail-soft cobertos por `test_banco_turso.py`; servidor local com `FONTE_LEITURAS=simulada` e `scripts/teste_fumaca.py --url http://127.0.0.1:8765` (24 de 24 verificações); servidor local com `TURSO_DATABASE_URL` inválido mostrou `/saude` e `/status` em 200, `/disponibilidade` em 503 e `banco_disponivel=false` (no Windows, a recusa veio da falta de driver libSQL, antes de qualquer rede); documentação conferida contra as páginas oficiais da Vercel, Turso e Groq em 15/11/2026; `uv pip compile --python-platform x86_64-manylinux_2_17 --python-version 3.13` resolveu `sqlalchemy-libsql==0.2.0` e `libsql-experimental==0.0.55` (há wheel cp313 manylinux); `python ml/avaliar_llm.py` regenerou `docs/avaliacao/llm.md` (8 mensagens do mock exibidas, 16 mensagens-padrão, filtro 14/15). **Não validado:** execução do driver libSQL e de `sqlalchemy-libsql` em Linux/WSL, conexão com o Turso real, deploy/bundle/estáticos da Vercel, Docker, Render e chamada real ao Groq.
+- **Arquivos/commit relacionados:** `prototipo/app/banco.py`, `prototipo/app/principal.py`,
+  `prototipo/app/alimentador.py`, `prototipo/app/explicacao.py`, `prototipo/testes/` (`conftest.py`,
+  `test_banco_turso.py`, `test_explicacao.py`, `test_llm_http.py`, `test_avaliacao.py`),
+  `prototipo/requirements.txt`, `prototipo/index.py`, `prototipo/vercel.json`, `prototipo/.vercelignore`,
+  `prototipo/.python-version`, `prototipo/scripts/verificar_turso.py`, `prototipo/scripts/relatorio_testes.py`,
+  `prototipo/ml/avaliar_llm.py`, `docs/avaliacao/llm.md`/`llm.json`, `prototipo/Dockerfile`,
+  `prototipo/.dockerignore`, `render.yaml`, `prototipo/ml/saida/modelo.pkl`, `prototipo/ml/saida/metricas.json`,
+  `.github/workflows/testes.yml`, `README.md`, `prototipo/README.md`, `CLAUDE.md`, `docs/` (`DEPLOY.md`,
+  `ARQUITETURA.md`, `fontes.md`, `ia_responsavel.md`, `testes.md`) e este registro. **Sem commit nesta sessão**
+  (aguardando autorização).
+
+## Registro de uso de IA — 2026-11-16: correções finais do C3 (Turso, CI libSQL, Vercel, filtro do LLM)
+- **Integrante:** Eduardo (Eduardo Rodrigues R Malaquias)
+- **Ferramenta / modelo:** Claude Code (Claude Opus 5.5)
+- **Tarefa:** corrigir o workflow do Turso (modos de verificação e escrita só com autorização), garantir que a CI teste
+  o driver libSQL, revisar a configuração da Vercel, revisar segurança, revalidar a IA e atualizar a documentação.
+  Antes, na mesma sessão, criar o `prototipo/.env` local (credenciais **não** reproduzidas aqui).
+- **Prompt utilizado:**
+  > Íntegra em [`prompts/2026-11-16_correcoes_finais_c3.md`](prompts/2026-11-16_correcoes_finais_c3.md)
+  > (“AgroAnálise C3 — Correções finais antes do GitHub, Turso e Vercel”, Tarefas 1 a 10).
+- **Resultado (resumo):** `scripts/verificar_turso.py` com modos `conexao` (banco vazio não é falha), `estrutura`
+  (tabelas, índices e restrição única), `persistencia` (contagem por origem e duplicações) e `semear` (exige
+  `--confirmar-escrita`; cria só as tabelas inexistentes, semeia e repete no mesmo instante para provar que não
+  duplica); mensagens de erro sem token/URL. Workflow `turso-validar-semeadura` com `horas` em `choice` (24/48/72),
+  inputs por variável de ambiente (sem interpolação no shell), escrita só com `executar_semente=true` **e**
+  `confirmacao_escrita=SEMEAR`, `permissions: contents: read` e `concurrency`. `test_driver_libsql.py` reescrito
+  (6 testes: importação, dialeto, criar/inserir/consultar/reabrir, erros, caminho do `app.banco`); no Ubuntu a falta
+  do driver é falha, no Windows o módulo é pulado. Novo `test_verificar_turso.py` (13 testes com SQLite) e 2 testes de
+  segurança em `test_banco_turso.py` (`/saude` com Turso fora sem vazar credencial; `POST /leituras` com banco fora =
+  503). CI: Python lido de `.python-version`, `pip check`, conferência de Python 3.13 e do driver, `pytest -rs` e
+  `ml/treinar.py --conferir` (nova opção: falha se o treino divergir do `metricas.json` versionado). `vercel.json`
+  corrigido: `includeFiles`/`excludeFiles` eram listas e a Vercel pede **uma string glob**. `.vercelignore` exclui
+  também `*.db`/`*.sqlite*`. Filtro do LLM: regra de falso alarme para o Verde (não mandar ir à lavoura com pressa nem
+  sugerir dano), simétrica à do Vermelho, com 12 testes de frases novas fora do banco de avaliação.
+  `scripts/relatorio_testes.py` passou a mostrar ambiente, testes pulados e cenários novos. Documentação: `DEPLOY.md`
+  (modos, workflow, procedimento para mostrar o Turso sem trocar `FONTE_LEITURAS`, bundle, `render.yaml`), roteiro do
+  vídeo (números ligados à CI, pendências explícitas), READMEs e `fontes.md`.
+- **O que foi aproveitado / alterado:** gerado pela IA e revisado na sessão. `app/banco.py` não foi alterado. O
+  `docs/usabilidade/indicadores.md` não foi alterado (não há dados novos). O relatório C1 não foi alterado.
+  Limitação mantida: o filtro é por palavras; o caso do Verde no banco de avaliação passou a ser bloqueado, mas o
+  resultado dessa categoria é otimista (o banco motivou a regra) e precisa do modo ao vivo.
+- **Como foi validado:** ambiente temporário com `uv venv --python 3.13` (CPython 3.13.16, fora do repositório):
+  `pytest` = **245 passed, 6 skipped** (driver libSQL no Windows), 0 falhas; o mesmo na `.venv` 3.14.6;
+  `ml/treinar.py --conferir` = 51 métricas iguais ao versionado; `ml/avaliar_llm.py` (mock) = 15 de 15 ruins
+  bloqueadas, 7 de 9 boas aceitas, 0 inadequadas exibidas (antes: 14 de 15 e 1 exibida); teste de fumaça local com
+  SQLite = 24 de 24; com o `.env` apontando para o Turso no Windows, o startup caiu em fail-soft (`/saude` 200,
+  `banco_disponivel=false`, `/disponibilidade` 503); ensaio do procedimento do Turso com SQLite (1112 leituras
+  simuladas lidas por `/disponibilidade` com `FONTE_LEITURAS=simulada`). `pip download` confirmou wheels Linux cp313
+  de todo o `requirements.txt` (inclusive `libsql-experimental==0.0.55`); tamanho descompactado estimado ≈ 297 MB.
+  Páginas oficiais do Groq (modelo `openai/gpt-oss-20b` em produção, sem aviso de descontinuação) e da Vercel
+  conferidas em 16/11/2026. Busca de credenciais nos arquivos versionados e no histórico do Git: nenhuma.
+  **Não validado:** os 6 testes do driver libSQL e o workflow remoto (dependem de push/execução no GitHub Actions),
+  conexão com o Turso real, deploy/bundle real da Vercel, Groq real ao vivo.
+- **Arquivos/commit relacionados:** `.github/workflows/testes.yml`, `.github/workflows/turso-validar-semeadura.yml`,
+  `prototipo/scripts/verificar_turso.py`, `prototipo/scripts/relatorio_testes.py`, `prototipo/ml/treinar.py`,
+  `prototipo/ml/avaliar_llm.py`, `prototipo/app/explicacao.py`, `prototipo/vercel.json`, `prototipo/.vercelignore`,
+  `prototipo/testes/` (`test_driver_libsql.py`, `test_verificar_turso.py`, `test_banco_turso.py`,
+  `test_explicacao.py`, `test_avaliacao.py`), `docs/` (`DEPLOY.md`, `testes.md`, `video_mvp_roteiro.md`, `fontes.md`,
+  `avaliacao/llm.md`/`llm.json`, `uso-de-ia/prompts/2026-11-16_correcoes_finais_c3.md`), `README.md`,
+  `prototipo/README.md` e este registro. **Sem commit nesta sessão** (aguardando autorização).

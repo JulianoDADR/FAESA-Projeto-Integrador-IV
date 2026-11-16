@@ -9,20 +9,26 @@ simples a classe já calculada: **o LLM nunca decide a classe**. O relatório (C
 
 ## Comandos (rodar dentro de `prototipo/`)
 ```bash
-python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # instalar (Windows)
+py -3.13 -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt   # instalar (Windows, Python 3.13)
 .venv/Scripts/python ml/treinar.py --salvar        # treinar e gravar modelo.pkl, metricas.json e dataset
+.venv/Scripts/python ml/treinar.py --conferir      # não grava; falha se divergir do metricas.json (a CI roda isto)
 .venv/Scripts/python -m uvicorn app.principal:app  # subir API + páginas em http://localhost:8000
 .venv/Scripts/python -m pytest -v                  # testes (o LLM é sempre mockado; nenhum teste usa a rede)
 .venv/Scripts/python -m gateway.gateway --simulado --api http://localhost:8000   # gateway com Arduino simulado
-.venv/Scripts/python -m app.semear --horas 72      # leituras simuladas no banco (DATABASE_URL)
+.venv/Scripts/python -m app.semear --horas 72      # leituras simuladas no banco (TURSO_DATABASE_URL/DATABASE_URL)
 .venv/Scripts/python ml/avaliar_classificador.py   # docs/avaliacao/classificador.md
 .venv/Scripts/python ml/avaliar_llm.py             # docs/avaliacao/llm.md (mock; --ao-vivo usa o Groq)
 .venv/Scripts/python scripts/relatorio_testes.py   # pytest real + docs/testes.md
 .venv/Scripts/python scripts/teste_fumaca.py --url <url>   # contra o servidor no ar
+python scripts/verificar_turso.py --modo conexao|estrutura|persistencia   # Turso, só leitura (roda na CI Linux)
 .venv/Scripts/python ml/calcular_indicadores.py    # indicadores do Quadro 5 (docs/usabilidade/)
 ```
-Variáveis: `FONTE_LEITURAS` (simulada|banco), `TOKEN_DISPOSITIVO`, `DATABASE_URL`, `MINUTOS_DESATUALIZADO`,
+Python 3.13 (`.python-version`). Variáveis: `FONTE_LEITURAS` (simulada|banco), `TOKEN_DISPOSITIVO`,
+`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DATABASE_URL`, `VERCEL`, `MINUTOS_DESATUALIZADO`,
 `INTERVALO_LEITURA_MIN`. Os testes usam um SQLite temporário por teste (`testes/conftest.py`).
+O deploy recomendado é Vercel (`prototipo/index.py` + `vercel.json`) + Turso. No Windows local, testes usam SQLite;
+a suíte completa (incluindo driver libSQL) roda no GitHub Actions (Ubuntu) e a conexão Turso é validada pelo workflow
+manual remoto. Drivers libSQL têm marcador `sys_platform != "win32"`.
 Sem `--salvar`, `treinar.py` só imprime as métricas (não sobrescreve arquivos versionados).
 
 ## Estrutura
@@ -52,7 +58,7 @@ commits), **no mesmo commit** do código gerado.
   mesmas variáveis de entrada: **o ML valida o pipeline, não a eficácia agronômica em campo.**
 - O classificador usa só as 3 variáveis. Riscos do mapa não são feature do modelo.
 - **Segredos** só por variável de ambiente (`GROQ_API_KEY`, `GROQ_MODELO`, `TOKEN_DISPOSITIVO`, `DATABASE_URL`,
-  `MODO_DEMO`, `ORIGENS_PERMITIDAS`); nunca em código, log, commit ou README.
+  `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `MODO_DEMO`, `ORIGENS_PERMITIDAS`); nunca em código, log, commit ou README.
 - **LGPD:** sem dados pessoais na operação básica. Coordenadas do usuário nunca saem do navegador.
 - Verificação real: não afirmar que algo funciona sem ter rodado.
 

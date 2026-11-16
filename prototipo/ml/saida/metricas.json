@@ -498,6 +498,6 @@
   "divisao": "80/20 estratificada (train_test_split, random_state=42)",
   "origem_dados": "simulado",
   "versao_scikit_learn": "1.9.1",
-  "gerado_em": "2026-11-15T19:44:54+00:00",
+  "gerado_em": "2026-11-15T23:50:29+00:00",
   "aviso": "Rótulos gerados por regras sobre as mesmas variáveis de entrada: este resultado valida o pipeline, não a eficácia agronômica em campo."
 }

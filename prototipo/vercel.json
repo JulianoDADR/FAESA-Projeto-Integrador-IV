@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "index.py": {
+      "includeFiles": "{config/**,web/**,ml/saida/modelo.pkl,ml/saida/metricas.json,app/riscos/orientacoes.json}",
+      "excludeFiles": "{testes/**,dados/**,.venv/**,**/__pycache__/**,**/*.pyc,ml/saida/dataset_simulado.csv}",
+      "maxDuration": 60
+    }
+  }
+}

@@ -15,22 +15,30 @@ O **AgroAnálise** é um sistema de monitoramento de plantações de café (Ará
 |---|---|---|
 | **C1 – Relatório** | 18/09/2026 | Entregue e **revisado** conforme a correção do professor e o edital (ver `Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf` e `docs/`) |
 | **C2 – Protótipo (vídeo)** | 30/10/2026 | Vídeo do protótipo no YouTube (ver `Link video`) |
-| **C3 – MVP** | 04/12/2026 (confirmar no AVA) | Aplicação web, simulador, pipeline com gateway simulado, avaliação da IA, testes com CI e preparação do deploy **prontos na branch `eduardo/c3`**. Faltam: deploy com URL pública, testes com pessoas, montagem do Arduino, vídeo (ver [`docs/DIVISAO_DE_TRABALHO.md`](docs/DIVISAO_DE_TRABALHO.md)) |
+| **C3 – MVP** | 04/12/2026 (confirmar no AVA) | Aplicação web, simulador, pipeline com gateway simulado, avaliação da IA, testes com CI e preparação para **Vercel + Turso** prontos na branch `eduardo/c3`. Faltam: validação da conexão Turso pelo workflow remoto e deploy com URL pública, testes com pessoas, montagem do Arduino, vídeo (ver [`docs/DIVISAO_DE_TRABALHO.md`](docs/DIVISAO_DE_TRABALHO.md)) |
 
 URL pública: **[a preencher depois do deploy]** · Vídeo do MVP: **[a preencher]**
 
-## 🚀 Como rodar (5 comandos, Windows)
+## 🚀 Como rodar (5 comandos, Windows, Python 3.13)
 
 ```bash
 cd prototipo
-python -m venv .venv
+py -3.13 -m venv .venv                                  # sem o "py -3.13": uv venv --python 3.13 .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pytest -q
 .venv\Scripts\python -m uvicorn app.principal:app      # abra http://localhost:8000/index.html?demo=1
 ```
 
-No Linux/macOS, troque `.venv\Scripts\python` por `.venv/bin/python`. Variáveis opcionais em `prototipo/.env.example`
-(chave do Groq, banco, token do gateway). Detalhes de cada parte em [`prototipo/README.md`](prototipo/README.md).
+No Windows, os testes locais usam SQLite. Variáveis opcionais em `prototipo/.env.example` (chave do Groq, Turso/libSQL,
+token do gateway). O deploy recomendado usa Vercel (função Python) + Turso, com passo a passo em
+[`docs/DEPLOY.md`](docs/DEPLOY.md). A suíte completa (incluindo testes do driver libSQL) e a validação da conexão Turso
+rodam no GitHub Actions (Ubuntu); a conexão Turso só é considerada validada após o workflow remoto bem-sucedido. Detalhes
+em [`prototipo/README.md`](prototipo/README.md).
+
+> **Estado em 2026-11-16 (verificado localmente):** `pytest` no Windows com Python 3.13.16 = 245 aprovados, 6 pulados
+> (driver libSQL, só roda na CI Ubuntu), 0 falhas; teste de fumaça local 24 de 24. **Ainda não verificado:** execução
+> da CI com as mudanças desta etapa, conexão com o Turso real, deploy na Vercel, Groq real ao vivo, teste com
+> participantes e disponibilidade de 72 h. Arduino **não montado**; todas as leituras são **simuladas**.
 
 ## 🗂️ Estrutura
 
@@ -83,7 +91,7 @@ Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agrope
 
 1. **Aquisição:** Arduino com sensor de umidade do solo e DHT11 enviam as leituras por porta serial (sketch pronto, **não testado em hardware**; no MVP, Arduino simulado em porta virtual).
 2. **Gateway local (Python):** PySerial, Pandas e NumPy validam e tratam as leituras, guardam o histórico em SQLite e enviam os dados à nuvem por HTTPS autenticado, com retentativa.
-3. **Aplicação em nuvem:** API (FastAPI) que armazena as leituras (SQLAlchemy), executa o classificador Scikit-Learn e gera uma mensagem curta em linguagem simples (LLM via GroqCloud, com filtro de saída e mensagens-padrão de contingência).
+3. **Aplicação em nuvem:** API (FastAPI na Vercel) que armazena as leituras (SQLAlchemy, com Turso/libSQL no deploy ou SQLite local no desenvolvimento), executa o classificador Scikit-Learn e gera uma mensagem curta em linguagem simples (LLM via GroqCloud, com filtro de saída e mensagens-padrão de contingência).
 4. **Apresentação:** frontend web com o semáforo virtual, visão do agricultor e visão técnica.
 
 O LLM **não decide** a classe: apenas reformula, em linguagem simples, a classificação feita pelo modelo supervisionado, a partir de entradas estruturadas. Diagrama e decisões em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
@@ -92,7 +100,7 @@ O LLM **não decide** a classe: apenas reformula, em linguagem simples, a classi
 
 * **Classificador:** 80/20 estratificada, validação cruzada k=5 só no treino, busca de hiperparâmetros, linha de base e regra de referência; revocação do Vermelho com intervalo de confiança. Os rótulos vêm de regras sobre as mesmas variáveis: **valida o pipeline, não a eficácia agronômica em campo.**
 * **Camada de explicação (LLM):** 30 cenários (coerência, ausência de recomendação, tamanho, injeção de instrução, falhas da API e tokens), com modo reprodutível e modo ao vivo.
-* **Testes de software:** unitários, de integração e de ponta a ponta (falhas de sensor, mensagem serial incompleta, dado desatualizado, LLM indisponível), rodando no GitHub Actions; tabela em [`docs/testes.md`](docs/testes.md).
+* **Testes de software:** unitários, de integração e de ponta a ponta (falhas de sensor, mensagem serial incompleta, dado desatualizado, LLM indisponível, banco fora do ar com fail-soft), rodando no GitHub Actions com Python 3.13; tabela em [`docs/testes.md`](docs/testes.md).
 
 ## 🔐 5. IA responsável
 

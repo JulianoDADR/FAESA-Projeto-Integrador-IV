@@ -54,6 +54,9 @@ def test_avaliacao_mock_nunca_leva_caso_de_borda_ao_llm_e_nunca_quebra():
     assert resumo["cenarios"] == 30 and resumo["validos"] == 24 and resumo["borda"] == 6
     assert resumo["borda_recusados_422"] == 6 and resumo["borda_chamou_llm"] == 0
     assert resumo["validos_chamaram_llm"] == 24 and resumo["validos_sem_chamada_por_teto"] == 0
+    # 7 do LLM depois da regra de falso alarme no Verde (2026-11-16); antes eram 8, com 1 inadequada exibida
+    assert resumo["mensagem_do_llm_exibida"] == 7 and resumo["mensagem_padrao_exibida"] == 17
+    assert resumo["inadequadas_exibidas_ao_usuario"] == 0
     assert resumo["exibidas_com_mais_de_2_frases"] == 0
     # nenhuma resposta inadequada do banco chega ao usuario numa classe Vermelho (o pior erro)
     vermelhos_ruins = [r for r in resultados if r["tipo"] == "valido" and r["classe"] == "Vermelho"

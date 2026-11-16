@@ -33,11 +33,28 @@ def test_pedido_ao_groq_tem_modelo_limites_e_token_no_cabecalho(com_chave, monke
     p = pedidos[0]
     assert p["url"] == explicacao.URL_GROQ and p["headers"]["Authorization"] == f"Bearer {CHAVE}"
     assert p["json"]["model"] == "modelo-de-teste" and p["json"]["max_tokens"] <= 150 and p["timeout"] <= 5
-    # so dados estruturados no pedido: a instrucao fixa do sistema e a linha com classe, especie e numeros
-    assert [m["role"] for m in p["json"]["messages"]] == ["system", "user"]
-    assert p["json"]["messages"][1]["content"].startswith("Classe: Vermelho. Espécie: Conilon.")
+    # so dados estruturados no pedido: a instrucao fixa e a linha com classe, especie e numeros
+    assert [m["role"] for m in p["json"]["messages"]] == ["user"]
+    assert p["json"]["messages"][0]["content"].startswith(explicacao.INSTRUCAO_SISTEMA)
+    assert "Classe: Vermelho. Espécie: Conilon." in p["json"]["messages"][0]["content"]
     uso = explicacao.uso_do_llm()
     assert uso["chamadas"] == 1 and uso["tokens_entrada"] == 150 and uso["tokens_saida"] == 20
+
+
+def test_modelo_padrao_gpt_oss_usa_parametros_de_raciocinio(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", CHAVE)
+    monkeypatch.delenv("GROQ_MODELO", raising=False)
+    pedidos = []
+    monkeypatch.setattr(explicacao.httpx, "post", lambda url, json, headers, timeout:
+                        pedidos.append(json) or _resposta(
+                            "Há leitura bem fora do ideal. Vá até a lavoura e avalie a situação."))
+    mensagem, origem = explicacao.gerar_mensagem("Vermelho", LEITURA)
+    assert origem == "llm" and mensagem.startswith("Há leitura")
+    pedido = pedidos[0]
+    assert explicacao.MODELO_PADRAO == "openai/gpt-oss-20b" and pedido["model"] == explicacao.MODELO_PADRAO
+    assert pedido["max_completion_tokens"] == explicacao.MAX_TOKENS_GPT_OSS
+    assert pedido["reasoning_effort"] == "low" and pedido["include_reasoning"] is False
+    assert [m["role"] for m in pedido["messages"]] == ["user"]
 
 
 @pytest.mark.parametrize("efeito, descricao", [

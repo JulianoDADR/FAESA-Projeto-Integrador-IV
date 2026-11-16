@@ -58,25 +58,28 @@ dependem de ações do grupo (deploy, testes com pessoas).
 
 ## Seção 7.6 (Testes de software): acrescentar
 
-> O MVP conta com 205 testes automatizados (pytest), todos aprovados na última execução, executados também no
+> O MVP conta com 215 testes automatizados (pytest), todos aprovados na última execução, executados também no
 > GitHub Actions a cada envio ao repositório, sem segredos e com o modelo de linguagem sempre simulado. Os testes
 > cobrem validação de leituras, protocolo serial e calibração, regra de decisão da classe Vermelho, integração entre
 > API, banco, classificador e camada de explicação, chamadas HTTP ao provedor do LLM (limite do plano, tempo esgotado,
-> resposta malformada), ingestão autenticada e idempotente, teste de ponta a ponta com Arduino simulado em porta
-> virtual (gateway, API, classificação e painel), e situações de falha: sensor desconectado, mensagem serial
-> incompleta, valor fora do intervalo, ausência de dados recentes, queda de rede do gateway e indisponibilidade do
-> LLM. A tabela de cenários, resultado esperado, obtido e situação está em `docs/testes.md`.
+> resposta malformada), ingestão autenticada e idempotente, configuração do Turso/libSQL e fail-soft do banco na
+> demonstração, teste de ponta a ponta com Arduino simulado em porta virtual (gateway, API, classificação e painel),
+> e situações de falha: sensor desconectado, mensagem serial incompleta, valor fora do intervalo, ausência de dados
+> recentes, queda de rede do gateway, indisponibilidade do LLM e banco fora do ar. A tabela de cenários, resultado
+> esperado, obtido e situação está em `docs/testes.md`.
 
 ## Seção 8.4 (Arquitetura de implantação): acrescentar
 
-> A aplicação foi empacotada em contêiner (Dockerfile) que gera o modelo durante a construção da imagem, com a mesma
-> versão do scikit-learn usada na execução. O serviço foi publicado no Render, plano gratuito,
-> em [URL pública], com verificação de saúde em `/saude`. Para que a URL de avaliação não fique sem dados quando
-> nenhum gateway estiver enviando, um alimentador de demonstração grava leituras simuladas pelo mesmo caminho de
-> validação da ingestão, e o banco recebe uma carga inicial de 72 horas simuladas quando está vazio. Foram adotados
-> limite de requisições por endereço, tamanho máximo de requisição, cabeçalhos de segurança, teto de chamadas ao LLM
-> e recursos de demonstração controlados por variável de ambiente. O teste de fumaça contra a URL pública
-> obteve [resultado]. (Fontes: `docs/DEPLOY.md`, `docs/ARQUITETURA.md`.)
+> A aplicação será publicada como função Python na Vercel, com as páginas servidas pela própria API e persistência
+> opcional no Turso/libSQL; o modelo `modelo.pkl` versionado foi regenerado com Python 3.13 e a mesma versão do
+> scikit-learn usada na execução. O serviço ficará em [URL pública], com verificação de saúde em `/saude` (incluindo
+> `banco_disponivel`, sem expor credenciais). Para que a demonstração não fique sem dados quando nenhum gateway
+> estiver enviando, a fonte simulada é o padrão; com `FONTE_LEITURAS=banco`, uma carga inicial de 72 horas simuladas
+> pode ser gerada por `app/semear.py`. Falhas de banco não derrubam as páginas, `/status`, `/classificar` ou
+> `/metricas` quando a fonte é simulada; as rotas de banco respondem 503. Foram adotados limite de requisições por
+> endereço, tamanho máximo de requisição, cabeçalhos de segurança, teto de chamadas ao LLM e recursos de demonstração
+> controlados por variável de ambiente. O teste de fumaça contra a URL pública obteve [resultado].
+> (Fontes: `docs/DEPLOY.md`, `docs/ARQUITETURA.md`.)
 
 ## Seção 9.2 (Indicadores de impacto): acrescentar após o Quadro 5
 
@@ -98,5 +101,5 @@ dependem de ações do grupo (deploy, testes com pessoas).
 ## Seção 11 (Plano de trabalho): atualizar a linha do C3
 
 > MVP com aplicação web, simulador ao vivo, visão do agricultor com leitura em voz alta, persistência, ingestão
-> autenticada, gateway com modo simulado, avaliação do classificador e da camada de explicação, 205 testes
+> autenticada, gateway com modo simulado, avaliação do classificador e da camada de explicação, 215 testes
 > automatizados com integração contínua, deploy com URL pública [URL] e análise de impacto.

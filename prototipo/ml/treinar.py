@@ -3,6 +3,7 @@
 Uso:
   python ml/treinar.py            # treina e mostra as metricas (nao grava nada)
   python ml/treinar.py --salvar   # tambem grava dataset_simulado.csv, modelo.pkl e metricas.json em ml/saida/
+  python ml/treinar.py --conferir # nao grava; sai com 1 se as metricas divergirem de ml/saida/metricas.json (CI)
 
 Escolha do algoritmo: arvore de decisao rasa (profundidade 8). E interpretavel (da para ler as regras),
 barata e deterministica, adequada a entradas numericas e a uma saida de 3 classes (relatorio, 7.4).
@@ -202,7 +203,34 @@ def main(salvar=False):
     return metricas
 
 
+IGNORAR_NA_CONFERENCIA = ("gerado_em",)
+
+
+def divergencias(novas, versionadas, prefixo=""):
+    """Chaves cujo valor difere entre o treino atual e o metricas.json versionado (ignora a data de geracao)."""
+    saida = []
+    for chave in sorted(set(novas) | set(versionadas)):
+        if chave in IGNORAR_NA_CONFERENCIA:
+            continue
+        a, b = novas.get(chave), versionadas.get(chave)
+        if isinstance(a, dict) and isinstance(b, dict):
+            saida += divergencias(a, b, f"{prefixo}{chave}.")
+        elif json.dumps(a, sort_keys=True) != json.dumps(b, sort_keys=True):
+            saida.append(f"{prefixo}{chave}")
+    return saida
+
+
 if __name__ == "__main__":
     argumentos = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     argumentos.add_argument("--salvar", action="store_true", help="grava dataset, modelo.pkl e metricas.json")
-    main(salvar=argumentos.parse_args().salvar)
+    argumentos.add_argument("--conferir", action="store_true",
+                            help="não grava; falha se as métricas divergirem do metricas.json versionado")
+    opcoes = argumentos.parse_args()
+    metricas_atuais = main(salvar=opcoes.salvar and not opcoes.conferir)
+    if opcoes.conferir:
+        versionadas = json.loads((PASTA_SAIDA / "metricas.json").read_text(encoding="utf-8"))
+        diferentes = divergencias(json.loads(json.dumps(metricas_atuais)), versionadas)
+        if diferentes:
+            print(f"[FALHOU] Treino diverge do metricas.json versionado em: {diferentes[:10]}")
+            raise SystemExit(1)
+        print("[OK ] Treino reproduz o metricas.json versionado (exceto gerado_em)")

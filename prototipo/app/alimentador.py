@@ -24,6 +24,8 @@ _fonte = FonteSimulada()
 
 
 def ligado():
+    if os.getenv("VERCEL"):  # funcao serverless nao mantem tarefa em segundo plano
+        return False
     return os.getenv("ALIMENTADOR_DEMO", "").strip().lower() in ("1", "true", "sim", "yes")
 
 

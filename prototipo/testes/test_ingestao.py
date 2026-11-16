@@ -200,3 +200,22 @@ def test_semente_grava_simulado_alinhado_ao_relogio_e_pode_rodar_de_novo(cliente
     assert any(l["classe"] for l in d["leituras"]) and all(l["origem_dados"] in ("simulado", "sem leitura") for l in d["leituras"])
     h = fontes.FonteBanco(relogio=lambda: agora).historico("A", 6)
     assert sum(p["umidade_solo"] is not None for p in h) == 6
+
+
+def test_semente_em_grade_fixa_nao_duplica_apos_minutos_e_permite_intervalo_posterior():
+    from app.semear import semear
+
+    t0 = datetime(2026, 11, 15, 18, 0, tzinfo=timezone.utc)
+    primeira = semear(horas=2, agora=t0, intervalo_min=10)
+    assert primeira["gravadas"] == 96 and banco.contar_leituras() == 96
+
+    segunda = semear(horas=2, agora=t0, intervalo_min=10)
+    assert segunda["gravadas"] == 0 and segunda["ignoradas"] == 96 and banco.contar_leituras() == 96
+
+    terceira = semear(horas=2, agora=t0 + timedelta(minutes=1), intervalo_min=10)
+    assert terceira["gravadas"] == 0 and banco.contar_leituras() == 96
+
+    quarta = semear(horas=2, agora=t0 + timedelta(minutes=10), intervalo_min=10)
+    assert quarta["gravadas"] == 8 and banco.contar_leituras() == 104
+    quinta = semear(horas=2, agora=t0 + timedelta(minutes=10), intervalo_min=10)
+    assert quinta["gravadas"] == 0 and banco.contar_leituras() == 104

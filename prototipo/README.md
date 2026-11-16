@@ -6,19 +6,21 @@ Protótipo demonstrativo do semáforo de cafezais. **Todos os dados são simulad
 O classificador (Scikit-Learn) decide a classe; o LLM (GroqCloud) apenas reformula a mensagem. Sem chave ou com falha,
 o sistema usa mensagens-padrão e o semáforo continua funcionando.
 
-## Rodar em 5 comandos (a partir da pasta `prototipo/`)
+## Rodar em 5 comandos (a partir da pasta `prototipo/`, Python 3.13)
 
 ```bash
-python -m venv .venv && .venv\Scripts\activate      # Windows (Linux/macOS: source .venv/bin/activate)
+py -3.13 -m venv .venv && .venv\Scripts\activate    # Windows, Python 3.13 (ou: uv venv --python 3.13 .venv)
 pip install -r requirements.txt
-python ml/treinar.py --salvar                       # gera dataset, modelo.pkl e metricas.json
+python ml/treinar.py --conferir                     # treina sem gravar e confere o modelo/métricas versionados
 uvicorn app.principal:app                           # sobe API + páginas
 # abra http://localhost:8000
 ```
 
 Atalho: `python executar_demo.py` treina se faltar o modelo e sobe o servidor.
 
-Sem `--salvar`, `ml/treinar.py` só mostra as métricas e não sobrescreve os arquivos versionados.
+O `modelo.pkl` e o `metricas.json` já vêm versionados. Sem `--salvar`, `ml/treinar.py` só mostra as métricas e não
+sobrescreve nada; `--conferir` também falha se o treino divergir do versionado (é o que a CI roda). Use `--salvar`
+só quando quiser regerar o modelo de propósito (muda a data em `metricas.json`).
 As faixas (limites físicos, intervalo de treino e faixas provisórias de rotulagem) ficam em `config/faixas.json`,
 lido pelo gerador do dataset, pela API (`GET /faixas`) e pela interface.
 
@@ -41,12 +43,12 @@ lido pelo gerador do dataset, pela API (`GET /faixas`) e pela interface.
   variáveis de entrada.
 - As barras de "proporção" na página de IA são a fração (ponderada pelo peso do Vermelho) de amostras de treino
   parecidas em cada classe. Não são confiança nem certeza.
-- O `modelo.pkl` continua versionado até o deploy; no deploy ele será gerado no build (`python ml/treinar.py --salvar`),
-  para não amarrar o binário à versão do scikit-learn.
+- O `modelo.pkl` é versionado e vai no bundle da Vercel; foi regenerado com Python 3.13.16 e scikit-learn 1.9.1, a
+  mesma versão fixada para o deploy. Se o `requirements.txt` mudar a versão do scikit-learn, rode `python ml/treinar.py --salvar`.
 
 ## LLM (opcional)
 
-Copie `.env.example` para `.env` e preencha `GROQ_API_KEY` (e, se quiser, `GROQ_MODELO`; padrão `llama-3.1-8b-instant`).
+Copie `.env.example` para `.env` e preencha `GROQ_API_KEY` (e, se quiser, `GROQ_MODELO`; padrão `openai/gpt-oss-20b`).
 A chave nunca é gravada no código nem no repositório (`.env` está no `.gitignore`).
 Sem chave, as respostas trazem `origem_mensagem: "padrao"`.
 
@@ -56,7 +58,10 @@ Sem chave, as respostas trazem `origem_mensagem: "padrao"`.
 python -m pytest -v
 ```
 
-Nenhum teste usa a rede: o LLM é simulado com `monkeypatch`.
+Nenhum teste usa a rede: o LLM é simulado com `monkeypatch` e nenhum teste usa o Turso real. No Windows, os 6 testes de
+`testes/test_driver_libsql.py` aparecem como **pulados** (o driver libSQL não é instalado); no GitHub Actions (Ubuntu)
+eles rodam e a falta do driver é falha. Execução local em 2026-11-16 (Windows, Python 3.13.16): 245 aprovados,
+6 pulados, 0 falhas; o número de referência do C3 é o da CI. Tabela por cenário: `docs/testes.md`.
 
 ## Rotas
 
@@ -88,8 +93,8 @@ As leituras dos talhões vêm de uma `FonteDeLeituras` (`app/fontes.py`). Hoje a
 determinística (mesmo passo, mesma leitura), sem estado no servidor. Cada passo vale 10 minutos simulados e o relógio
 avança um passo a cada 3 s reais; a interface pausa ou acelera pedindo outro passo. O solo seca em ciclos, a
 temperatura sobe à tarde, há dias com chuva simulada e um sensor (talhão H) que fica sem sinal de vez em quando.
-Cada leitura passa pela mesma avaliação do `/classificar` (`app/servico.py`). A `FonteBanco` (gateway) vem na Etapa 4.
-O roteiro do modo apresentação fica em `web/ativos/roteiro_demo.json` e pode ser editado sem mexer no código.
+Cada leitura passa pela mesma avaliação do `/classificar` (`app/servico.py`). A `FonteBanco` (gateway) está em
+`app/fontes.py`. O roteiro do modo apresentação fica em `web/ativos/roteiro_demo.json` e pode ser editado sem mexer no código.
 
 ## Pipeline com banco e gateway (dados do sensor)
 
@@ -112,8 +117,13 @@ set FONTE_LEITURAS=banco& set MINUTOS_DESATUALIZADO=1& .venv\Scripts\python -m u
 Pare o gateway (Ctrl+C) e, depois de 1 minuto, as páginas mostram **Sem dados atualizados** (cinza, nunca uma cor).
 Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (leituras simuladas).
 
-- **Banco:** `DATABASE_URL` (padrão SQLite em `prototipo/dados/`; no deploy, Postgres gerenciado, porque o disco
-  de serviços gratuitos pode ser apagado). Tabelas criadas no startup; leituras únicas por (talhão, instante).
+- **Banco:** `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (recomendado no deploy), depois `DATABASE_URL` e, por fim,
+  SQLite em `prototipo/dados/`. No Windows local usa-se SQLite; a conexão Turso é validada pelo workflow manual do
+  GitHub Actions (Ubuntu). Tabelas criadas no startup; leituras únicas por (talhão, instante). Com
+  `FONTE_LEITURAS=simulada`, falha de banco não derruba páginas, `/status`, `/classificar` nem `/metricas`; as rotas de
+  banco respondem 503 (*fail-soft*). Com `FONTE_LEITURAS=banco`, falha no startup é fatal. Diagnóstico remoto:
+  `python scripts/verificar_turso.py --modo conexao|estrutura|persistencia` (somente leitura) ou
+  `--modo semear --horas 24|48|72 --confirmar-escrita` (escreve; usado pelo workflow manual com autorização).
 - **Ingestão:** `POST /leituras` exige `Authorization: Bearer <TOKEN_DISPOSITIVO>`; recusa campos extras, valores
   fora do possível (contados como rejeição) e datas sem fuso, no futuro ou muito antigas; reenviar a mesma leitura
   não duplica (200), mesma chave com valores diferentes dá 409.
@@ -141,8 +151,8 @@ Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (
 - Limite de pedidos por IP e por minuto (429 com `Retry-After`), teto de chamadas ao Groq por minuto e por dia,
   corpo máximo de 16 KB (413), cabeçalhos de segurança (CSP, `nosniff`, `X-Frame-Options`, HSTS em https) e CORS
   só para `ORIGENS_PERMITIDAS`.
-- `Dockerfile` (gera o `modelo.pkl` no build) e `render.yaml` na raiz. Passo a passo em
-  [`docs/DEPLOY.md`](../docs/DEPLOY.md). Teste de fumaça: `.venv\Scripts\python scripts\teste_fumaca.py --url <url>`.
+- Deploy recomendado: `index.py` + `vercel.json` na Vercel (Root Directory `prototipo/`) + Turso, com `FONTE_LEITURAS=simulada` para a demo sem Arduino. `Dockerfile` e `render.yaml` ficam como alternativa legada opcional. Passo a passo em [`docs/DEPLOY.md`](../docs/DEPLOY.md); a validação da conexão Turso depende do workflow manual remoto e o deploy real ainda precisa ser feito. Teste de fumaça:
+  `.venv\Scripts\python scripts\teste_fumaca.py --url <url>`.
 
 ## Limites do protótipo
 
@@ -150,4 +160,6 @@ Para o banco não abrir vazio: `.venv\Scripts\python -m app.semear --horas 72` (
 - Rótulos gerados por regras sobre as mesmas variáveis de entrada: as métricas validam o pipeline, não a eficácia em campo.
 - Sem acionamento de irrigação, diagnóstico de doenças, recomendação agronômica ou login.
 - Arduino ainda não montado: o gateway roda com porta virtual; sketch e calibração não testados em hardware.
+- Pendentes em 2026-11-16: conexão com o Turso real (workflow remoto), deploy na Vercel, mensagens do Groq real ao
+  vivo, teste de usabilidade com participantes e disponibilidade de 72 h em operação.
 - Sem dados pessoais.
