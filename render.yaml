@@ -1,0 +1,37 @@
+# Blueprint do Render (opcional): cria o serviço web a partir do Dockerfile em prototipo/.
+# Confira no painel do Render os nomes de campos e as regras vigentes do plano gratuito antes de usar (docs/DEPLOY.md).
+services:
+  - type: web
+    name: agroanalise
+    runtime: docker
+    plan: free
+    rootDir: prototipo
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /saude
+    envVars:
+      - key: MODO_DEMO
+        value: "1"
+      - key: FONTE_LEITURAS
+        value: banco
+      - key: ALIMENTADOR_DEMO
+        value: "1"
+      - key: SEMEAR_SE_VAZIO
+        value: "1"
+      - key: INTERVALO_LEITURA_MIN
+        value: "10"
+      - key: MINUTOS_DESATUALIZADO
+        value: "15"
+      - key: GROQ_MODELO
+        value: openai/gpt-oss-20b
+      - key: GROQ_MAX_POR_MINUTO
+        value: "20"
+      - key: GROQ_MAX_POR_DIA
+        value: "1000"
+      - key: TOKEN_DISPOSITIVO
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false

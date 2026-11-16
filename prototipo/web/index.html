@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <meta name="description" content="AgroAnálise: semáforo do cafezal para agricultores familiares (protótipo com dados simulados).">
+  <title>AgroAnálise · Início</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+  <script src="ativos/barra_zonas.js" defer></script>
+  <script src="ativos/apresentacao.js" defer></script>
+</head>
+<body>
+<main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+  <section class="grid gap-6 sm:grid-cols-[1fr_auto] items-center">
+    <div>
+      <h1 class="text-4xl font-extrabold leading-tight">Seu cafezal em um semáforo</h1>
+      <p class="mt-2 text-xl">O AgroAnálise lê o solo e o clima da lavoura de café (Arábica e Conilon) e mostra, em linguagem simples,
+        se está tudo <b>Ideal</b>, pede <b>Atenção</b> ou exige <b>Ação crítica</b>.</p>
+      <div class="flex flex-wrap gap-3 mt-4">
+        <button type="button" id="iniciar-demo" class="botao principal text-xl" style="min-height:3.75rem">▶ Iniciar demonstração</button>
+        <a class="botao text-xl" style="min-height:3.75rem" href="agricultor.html">Ver minha lavoura</a>
+      </div>
+      <p id="erro-demo" class="erro-caixa mt-3" hidden></p>
+    </div>
+    <div class="semaforo gigante hidden sm:flex" aria-hidden="true">
+      <div class="lampada vermelho"></div><div class="lampada amarelo"></div><div class="lampada verde acesa"></div>
+    </div>
+  </section>
+
+  <div class="aviso-caixa"><b>Esta é uma versão de demonstração.</b> O equipamento (Arduino e sensores) ainda <b>não está conectado</b>:
+    todas as leituras são <b>simuladas</b> e as faixas são provisórias.</div>
+
+  <section aria-labelledby="t-estados"><h2 id="t-estados" class="text-xl font-bold mb-2">Cada estado tem cor, palavra, ícone e forma</h2>
+    <div class="grid gap-3 sm:grid-cols-4">
+      <div class="estado verde"><div class="flex items-center gap-2" id="ic-verde"></div><p class="mt-1">Círculo. Sem alerta no momento.</p></div>
+      <div class="estado amarelo"><div class="flex items-center gap-2" id="ic-amarelo"></div><p class="mt-1">Triângulo. Observe a lavoura.</p></div>
+      <div class="estado vermelho"><div class="flex items-center gap-2" id="ic-vermelho"></div><p class="mt-1">Octógono. Vá até a lavoura e avalie.</p></div>
+      <div class="estado cinza"><div class="flex items-center gap-2" id="ic-cinza"></div><p class="mt-1">Tracejado. Sem leitura recente: nenhuma cor.</p></div>
+    </div></section>
+
+  <section aria-labelledby="t-fluxo"><h2 id="t-fluxo" class="text-xl font-bold mb-2">Como funciona, em 4 camadas</h2>
+    <ol class="grid gap-3 sm:grid-cols-4">
+      <li class="cartao"><div class="text-sm font-bold">1 · Sensores</div><p>Solo, temperatura e umidade do ar. <span class="text-sm">(simulados aqui)</span></p></li>
+      <li class="cartao"><div class="text-sm font-bold">2 · Gateway</div><p>Recebe e confere as leituras. <span class="text-sm">(previsto no MVP)</span></p></li>
+      <li class="cartao"><div class="text-sm font-bold">3 · API e IA</div><p>Um classificador decide a cor; um LLM só escreve a mensagem.</p></li>
+      <li class="cartao"><div class="text-sm font-bold">4 · Semáforo</div><p>Cor, palavra, ícone, forma e hora da última leitura.</p></li>
+    </ol></section>
+
+  <section aria-labelledby="t-ir"><h2 id="t-ir" class="text-xl font-bold mb-2">Explore</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <a class="botao" data-pagina="agricultor.html" href="agricultor.html">Visão do agricultor (com “Ouvir”)</a>
+      <a class="botao" data-pagina="talhoes.html" href="talhoes.html">Talhões ao vivo</a>
+      <a class="botao" data-pagina="painel.html" href="painel.html">Painel do semáforo</a>
+      <a class="botao" data-pagina="ia.html" href="ia.html">IA ao vivo (classificar de verdade)</a>
+      <a class="botao" data-pagina="historico.html" href="historico.html">Histórico simulado</a>
+      <a class="botao" data-pagina="avaliacao.html" href="avaliacao.html">Avaliação do modelo</a>
+      <a class="botao" data-pagina="sobre.html" href="sobre.html">O que não faz e limites</a>
+    </div></section>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  [["verde", "Verde"], ["amarelo", "Amarelo"], ["vermelho", "Vermelho"]].forEach(([id, c]) => {
+    document.getElementById("ic-" + id).innerHTML = `${ICONES[ESTADOS[c].icone]}<b class="text-xl">${ESTADOS[c].rotulo}</b>`;
+  });
+  document.getElementById("ic-cinza").innerHTML = `${ICONES.semdados}<b class="text-xl">Sem dados</b>`;
+  document.querySelectorAll("[data-pagina]").forEach((a) => (a.href = linkCom(a.dataset.pagina)));
+  document.getElementById("iniciar-demo").addEventListener("click", iniciarApresentacao);
+  if (parametroUrl("demo") === "1") iniciarApresentacao(); // ?demo=1 abre direto (útil para gravar o vídeo)
+});
+</script>
+</body>
+</html>

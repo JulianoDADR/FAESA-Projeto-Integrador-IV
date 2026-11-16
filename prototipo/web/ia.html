@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <title>IA ao vivo · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-3xl font-extrabold">IA ao vivo</h1>
+    <p class="mt-1">Informe as leituras (simuladas). O <b>classificador</b> decide a cor; o <b>LLM</b> só escreve a mensagem.</p>
+  </div>
+
+  <section class="cartao space-y-4" aria-labelledby="t-form">
+    <h2 id="t-form" class="text-xl font-bold">Leitura</h2>
+    <div>
+      <label for="especie" class="font-semibold block">Espécie de café</label>
+      <select id="especie" class="mt-1 w-full border-2 rounded-xl p-3 bg-white" style="border-color:var(--borda)">
+        <option value="Arabica">Arábica</option><option value="Conilon">Conilon</option>
+      </select>
+    </div>
+    <div id="controles" class="grid gap-4 sm:grid-cols-3"></div>
+    <div>
+      <p class="font-semibold">Cenários prontos</p>
+      <div id="cenarios" class="flex flex-wrap gap-2 mt-1"></div>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <button id="classificar" class="botao principal">Classificar</button>
+      <button id="falha" class="botao" aria-pressed="false" title="Força o LLM a falhar para mostrar a mensagem-padrão">Simular falha do LLM: desligado</button>
+    </div>
+  </section>
+
+  <section aria-live="polite" aria-labelledby="t-res" class="space-y-4">
+    <h2 id="t-res" class="text-xl font-bold">Resultado</h2>
+    <div id="erro" class="erro-caixa" hidden></div>
+    <div id="resultado" class="cartao"><p>Clique em <b>Classificar</b> para ver o resultado.</p></div>
+    <div id="proporcoes" class="cartao" hidden>
+      <h3 class="font-bold">Proporção de amostras parecidas em cada classe</h3>
+      <p id="explicacao-proporcoes" class="text-sm mb-2">Entre as leituras de treino mais parecidas com esta (mesma folha da árvore), quantas eram de cada cor.
+        <b>Não é confiança nem certeza do modelo.</b></p>
+      <div id="barras" class="space-y-2"></div>
+      <p id="regra" class="text-sm mt-2"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+// Os limites dos controles deslizantes vêm de /faixas (config/faixas.json): só o intervalo visto no treino.
+const VARIAVEIS = [
+  { id: "umidade_solo", nome: "Umidade do solo (%)", min: 0, max: 100, passo: 1, valor: 55 },
+  { id: "temperatura", nome: "Temperatura (°C)", min: 5, max: 42, passo: 0.5, valor: 21 },
+  { id: "umidade_ar", nome: "Umidade do ar (%)", min: 15, max: 100, passo: 1, valor: 72 },
+];
+let simularFalha = false;
+
+async function aplicarFaixasDeTreino() {
+  const r = await chamarApi("/faixas");
+  if (!r.ok) return; // sem servidor: mantém os valores padrão acima
+  VARIAVEIS.forEach((v) => {
+    const info = r.dados.variaveis[v.id];
+    if (info) [v.min, v.max] = info.faixa_treino;
+  });
+}
+
+function desenharControles() {
+  document.getElementById("controles").innerHTML = VARIAVEIS.map((v) => `
+    <div><label for="${v.id}" class="font-semibold block">${v.nome}</label>
+    <input id="${v.id}" type="number" inputmode="decimal" step="${v.passo}" value="${v.valor}" class="mt-1 w-full border-2 rounded-xl p-3 bg-white" style="border-color:var(--borda)">
+    <input id="${v.id}_barra" type="range" min="${v.min}" max="${v.max}" step="${v.passo}" value="${v.valor}" class="w-full mt-2" aria-label="Ajuste de ${v.nome}"></div>`).join("");
+  VARIAVEIS.forEach((v) => {
+    const campo = document.getElementById(v.id), barra = document.getElementById(v.id + "_barra");
+    barra.addEventListener("input", () => (campo.value = barra.value));
+    campo.addEventListener("input", () => (barra.value = campo.value));
+  });
+}
+
+function preencher(c) {
+  document.getElementById("especie").value = c.especie;
+  VARIAVEIS.forEach((v) => {
+    const valor = c[v.id] ?? "";
+    document.getElementById(v.id).value = valor;
+    if (valor !== "") document.getElementById(v.id + "_barra").value = valor;
+  });
+}
+
+async function carregarCenarios() {
+  const r = await chamarApi("/cenarios");
+  const alvo = document.getElementById("cenarios");
+  if (!r.ok) { alvo.innerHTML = '<span class="text-sm">Cenários indisponíveis (servidor fora do ar).</span>'; return; }
+  alvo.innerHTML = r.dados.map((c, i) => `<button class="botao" data-i="${i}">${esc(c.nome)}</button>`).join("");
+  alvo.querySelectorAll("button").forEach((b) => b.addEventListener("click", async () => {
+    preencher(r.dados[+b.dataset.i]);
+    await classificar();
+  }));
+}
+
+function lerFormulario() {
+  const corpo = { especie: document.getElementById("especie").value };
+  VARIAVEIS.forEach((v) => {
+    const texto = document.getElementById(v.id).value.trim();
+    corpo[v.id] = texto === "" ? null : Number(texto.replace(",", "."));
+  });
+  return corpo;
+}
+
+async function classificar() {
+  const erro = document.getElementById("erro"), res = document.getElementById("resultado");
+  const probs = document.getElementById("proporcoes");
+  erro.hidden = true;
+  const url = "/classificar" + (simularFalha ? "?simular_falha_llm=true" : "");
+  const r = await chamarApi(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(lerFormulario()) });
+  if (!r.ok) {
+    probs.hidden = true;
+    erro.hidden = false;
+    erro.innerHTML = "<b>" + (r.falhaRede ? "Servidor fora do ar." : "Não foi possível classificar.") + "</b><ul class='list-disc pl-5 mt-1'>" +
+      r.erros.map((e) => `<li>${esc(e)}</li>`).join("") + "</ul>";
+    desenharSemaforo(res, { classe: null, mensagem: "Sem resultado: confira os dados e tente de novo." });
+    return;
+  }
+  const d = r.dados;
+  desenharSemaforo(res, { classe: d.classe, mensagem: d.mensagem, atualizado_em: d.atualizado_em, selo: seloMensagem(d.origem_mensagem) });
+  if (d.aviso_fora_da_faixa_de_treino) {
+    const nomes = d.variaveis_fora_da_faixa_de_treino.map((id) => VARIAVEIS.find((v) => v.id === id)?.nome || id);
+    res.insertAdjacentHTML("beforeend", `<div class="aviso-caixa mt-3" role="note"><b>Fora do que o modelo viu no treino:</b> ${esc(nomes.join(", "))}.
+      A cor foi calculada, mas o modelo nunca treinou com valores assim; trate o resultado com cautela.</div>`);
+  }
+  probs.hidden = false;
+  const cores = { Verde: "var(--verde)", Amarelo: "var(--amarelo)", Vermelho: "var(--vermelho)" };
+  const dec = d.decisao || {};
+  if (d.explicacao_proporcoes) document.getElementById("explicacao-proporcoes").textContent = d.explicacao_proporcoes;
+  document.getElementById("regra").innerHTML = dec.regra_conservadora_aplicada
+    ? "<b>Regra conservadora aplicada:</b> a proporção de Vermelho passou do limiar, então a cor ficou Vermelho por segurança."
+    : `Regra de decisão: peso ${esc(dec.peso_vermelho ?? 1)} para o Vermelho no treino` +
+      (dec.limiar_vermelho == null ? "; sem limiar extra." : `; Vermelho quando a proporção passa de ${pct(dec.limiar_vermelho)}.`);
+  document.getElementById("barras").innerHTML = Object.entries(d.proporcoes).map(([c, p]) => `
+    <div><div class="flex justify-between"><span class="font-semibold">${rotuloClasse(c)}</span><span>${pct(p)}</span></div>
+    <div class="barra" role="img" aria-label="${rotuloClasse(c)} ${pct(p)}"><span style="width:${p * 100}%;background:${cores[c]}"></span></div></div>`).join("");
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await aplicarFaixasDeTreino();
+  desenharControles();
+  carregarCenarios();
+  document.getElementById("classificar").addEventListener("click", classificar);
+  const botaoFalha = document.getElementById("falha");
+  const saude = await chamarApi("/saude");
+  if (saude.ok && !saude.dados.modo_demo) botaoFalha.hidden = true; // simular falha só existe no modo demonstração
+  botaoFalha.addEventListener("click", () => {
+    simularFalha = !simularFalha;
+    botaoFalha.setAttribute("aria-pressed", simularFalha);
+    botaoFalha.textContent = "Simular falha do LLM: " + (simularFalha ? "ligado" : "desligado");
+  });
+});
+</script>
+</body>
+</html>

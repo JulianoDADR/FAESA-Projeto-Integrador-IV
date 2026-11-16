@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <meta name="description" content="Painel do semáforo de um talhão, ao vivo ou por cenários (dados simulados).">
+  <title>Painel · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+  <script src="ativos/barra_zonas.js" defer></script>
+  <script src="ativos/simulador.js" defer></script>
+</head>
+<body>
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-3xl font-extrabold">Painel da lavoura</h1>
+    <p class="mt-1">Acompanhe um talhão <b>ao vivo</b> (leituras simuladas a cada 3 s) ou escolha um <b>cenário pronto</b>.</p>
+  </div>
+
+  <div role="group" aria-label="Modo do painel" class="flex flex-wrap gap-2">
+    <button type="button" class="botao" id="modo-vivo" aria-pressed="true">Ao vivo</button>
+    <button type="button" class="botao" id="modo-cenarios" aria-pressed="false">Cenários prontos</button>
+  </div>
+
+  <section id="painel-vivo" class="cartao space-y-3" aria-label="Controles do modo ao vivo">
+    <div><label for="talhao" class="font-semibold block">Talhão</label>
+      <select id="talhao" class="mt-1 w-full sm:w-auto border-2 rounded-xl p-3 bg-white" style="border-color:var(--borda)"></select></div>
+    <div id="controles"></div>
+  </section>
+
+  <section id="painel-cenarios" class="cartao" aria-label="Cenários prontos" hidden>
+    <div id="cenarios" class="flex flex-wrap gap-2"></div>
+  </section>
+
+  <section class="cartao" aria-labelledby="t-sem"><h2 id="t-sem" class="sr-only">Semáforo</h2><div id="semaforo"></div></section>
+
+  <section class="cartao" aria-labelledby="t-leit"><h2 id="t-leit" class="text-xl font-bold mb-2">Leituras</h2><div id="barras"></div></section>
+
+  <section class="cartao so-tecnico" aria-labelledby="t-tec"><h2 id="t-tec" class="text-xl font-bold mb-2">Detalhes técnicos</h2>
+    <div id="tecnico"></div></section>
+
+  <p class="text-sm">O semáforo é um apoio. A decisão de manejo é sempre do produtor. As faixas usadas são provisórias, de demonstração.</p>
+</main>
+
+<script>
+let faixas = null, simulador = null;
+
+function mostrarAvaliacao(a, leitura) {
+  desenharSemaforo(document.getElementById("semaforo"), { classe: a.classe, mensagem: a.mensagem,
+    atualizado_em: a.atualizado_em, selo: a.classe ? seloMensagem(a.origem_mensagem) : "" });
+  desenharBarrasZonas(document.getElementById("barras"), faixas, leitura);
+  const p = a.proporcoes, d = a.decisao;
+  document.getElementById("tecnico").innerHTML = a.classe ? `<ul class="list-disc pl-5 space-y-1">
+      <li>Espécie: ${esc(nomeEspecie(leitura.especie))} · solo ${num(leitura.umidade_solo, 1)}% · temperatura ${num(leitura.temperatura, 1)} °C · ar ${num(leitura.umidade_ar, 1)}%</li>
+      <li>Proporção de amostras parecidas: Ideal ${pct(p.Verde)}, Atenção ${pct(p.Amarelo)}, Ação crítica ${pct(p.Vermelho)}. ${esc(a.explicacao_proporcoes || "")}</li>
+      <li>Decisão: peso ${esc(d.peso_vermelho)} para o Vermelho${d.limiar_vermelho == null ? ", sem limiar extra" : `, limiar ${pct(d.limiar_vermelho)}`}${d.regra_conservadora_aplicada ? " · <b>regra conservadora aplicada</b>" : ""}.</li>
+      <li>Mensagem: ${a.origem_mensagem === "llm" ? "escrita pelo LLM (Groq) e verificada" : "mensagem-padrão do sistema"} · dados: <b>${esc(a.origem_dados)}</b></li>
+      ${a.aviso_fora_da_faixa_de_treino ? "<li><b>Fora do intervalo visto no treino</b>: trate com cautela.</li>" : ""}
+    </ul>` : "<p>Sem leitura válida: nenhuma avaliação é calculada nem mostrada.</p>";
+}
+
+async function mostrarCenario(c) {
+  const leitura = { especie: c.especie, umidade_solo: c.umidade_solo, temperatura: c.temperatura, umidade_ar: c.umidade_ar };
+  if (c.umidade_solo === null) {
+    // Regra 6.2: sem leitura válida, nunca exibir cor de avaliação.
+    mostrarAvaliacao({ classe: null, mensagem: "Não recebemos leitura recente dos sensores. Confira o equipamento. Nenhuma avaliação é mostrada." }, leitura);
+    return;
+  }
+  const r = await chamarApi("/classificar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(leitura) });
+  if (!r.ok) { mostrarAvaliacao({ classe: null, mensagem: r.erros[0] }, leitura); return; }
+  mostrarAvaliacao(r.dados, leitura);
+}
+
+async function ativarCenarios() {
+  simulador.pausar();
+  const alvo = document.getElementById("cenarios");
+  if (!alvo.dataset.carregado) {
+    const r = await chamarApi("/cenarios");
+    if (!r.ok) { alvo.innerHTML = `<div class="erro-caixa">${esc(r.erros[0])}</div>`; return; }
+    alvo.dataset.carregado = "1";
+    alvo.innerHTML = r.dados.map((c, i) => `<button type="button" class="botao" data-i="${i}" aria-pressed="false">${esc(c.nome)}</button>`).join("");
+    const botoes = [...alvo.querySelectorAll("button")];
+    botoes.forEach((b) => b.addEventListener("click", () => {
+      botoes.forEach((x) => x.setAttribute("aria-pressed", x === b));
+      mostrarCenario(r.dados[+b.dataset.i]);
+    }));
+  }
+  alvo.querySelector("button")?.click();
+}
+
+function trocarModo(vivo) {
+  document.getElementById("modo-vivo").setAttribute("aria-pressed", vivo);
+  document.getElementById("modo-cenarios").setAttribute("aria-pressed", !vivo);
+  document.getElementById("painel-vivo").hidden = !vivo;
+  document.getElementById("painel-cenarios").hidden = vivo;
+  if (vivo) simulador.continuar(); else ativarCenarios();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("semaforo").innerHTML = esqueleto("12rem");
+  const sel = document.getElementById("talhao");
+  const inicial = parametroUrl("talhao") || "A";
+  const [t, f] = await Promise.all([chamarApi("/talhoes"), carregarFaixas()]);
+  faixas = f;
+  if (t.ok) sel.innerHTML = t.dados.talhoes.map((x) => `<option value="${esc(x.id)}" ${x.id === inicial ? "selected" : ""}>${esc(x.nome)} · ${esc(nomeEspecie(x.especie))} · ${esc(x.local)}</option>`).join("");
+  simulador = new Simulador({ talhao: t.ok ? sel.value : inicial,
+    aoAtualizar: (d) => {
+      if (document.getElementById("painel-vivo").hidden) return; // pedido que chegou depois de trocar para cenários
+      mostrarAvaliacao(d.leituras[0], d.leituras[0]); relogio(d.hora_simulada);
+    },
+    aoErrar: (r) => mostrarAvaliacao({ classe: null, mensagem: r.erros[0] }, { especie: "Arabica" }) });
+  const relogio = montarControlesSimulador(document.getElementById("controles"), simulador);
+  sel.addEventListener("change", () => simulador.trocarTalhao(sel.value));
+  document.getElementById("modo-vivo").addEventListener("click", () => trocarModo(true));
+  document.getElementById("modo-cenarios").addEventListener("click", () => trocarModo(false));
+  await simulador.iniciar();
+  if (parametroUrl("modo") === "cenarios") trocarModo(false);
+});
+</script>
+</body>
+</html>

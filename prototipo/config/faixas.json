@@ -1,0 +1,42 @@
+{
+  "aviso": "Faixas PROVISÓRIAS de demonstração. Não são parâmetros agronômicos validados (relatório, seção 8.3).",
+  "variaveis": {
+    "umidade_solo": {
+      "nome": "Umidade do solo",
+      "unidade": "%",
+      "limite_fisico": [0, 100],
+      "faixa_treino": [0, 100],
+      "ruido_rotulagem": 3.0,
+      "zonas": ["seco", "ok", "encharcado"]
+    },
+    "temperatura": {
+      "nome": "Temperatura",
+      "unidade": "°C",
+      "limite_fisico": [-10, 60],
+      "faixa_treino": [5, 42],
+      "ruido_rotulagem": 1.0,
+      "zonas": ["fria", "ok", "quente"]
+    },
+    "umidade_ar": {
+      "nome": "Umidade do ar",
+      "unidade": "%",
+      "limite_fisico": [0, 100],
+      "faixa_treino": [15, 100],
+      "ruido_rotulagem": 3.0,
+      "zonas": ["seco", "ok", "úmido"]
+    }
+  },
+  "rotulagem": {
+    "_comentario": "Por espécie e variável: [inicio_ideal, fim_ideal, margem]. Dentro do ideal = 0; fora mas dentro da margem = 1 (atenção); além da margem = 2 (crítico). A classe é o pior nível entre as variáveis.",
+    "Arabica": {
+      "umidade_solo": [40, 70, 15],
+      "temperatura": [18, 24, 4],
+      "umidade_ar": [60, 85, 12]
+    },
+    "Conilon": {
+      "umidade_solo": [40, 70, 15],
+      "temperatura": [22, 30, 4],
+      "umidade_ar": [60, 85, 12]
+    }
+  }
+}

@@ -1,0 +1,39 @@
+# Testes automáticos a cada push e pull request. Sem segredos: o LLM é sempre simulado nos testes
+# e o driver libSQL é testado com arquivo local (nunca o Turso real).
+name: testes
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: prototipo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: prototipo/.python-version
+          cache: pip
+          cache-dependency-path: prototipo/requirements.txt
+      - name: Instalar dependências (exatamente as de requirements.txt)
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip check
+      - name: Conferir Python 3.13 e driver libSQL instalados
+        run: |
+          python -c "import sys; assert sys.version_info[:2] == (3, 13), sys.version; print(sys.version)"
+          python -m pip show libsql-experimental sqlalchemy-libsql scikit-learn fastapi | grep -E "^(Name|Version):"
+      - name: Treinar o modelo e conferir contra o metricas.json versionado (não grava)
+        run: python ml/treinar.py --conferir
+      - name: Testes (no Ubuntu, falta do driver libSQL é falha, não skip)
+        run: python -m pytest -v -rs
+      - name: Avaliação do LLM em modo mock (sem rede)
+        run: python ml/avaliar_llm.py

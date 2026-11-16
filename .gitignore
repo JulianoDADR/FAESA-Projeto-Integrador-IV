@@ -1,0 +1,44 @@
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*token*
+*secret*
+*credentials*
+
+# Python / caches
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Ambientes virtuais
+.venv/
+.venv*/
+venv/
+
+# Bancos e dados locais
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+prototipo/dados/
+
+# Builds, deploy e temporários
+.vercel/
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+.DS_Store
+Thumbs.db
+
+# Arquivos locais do projeto
+ARQUIVOS_APOIO/

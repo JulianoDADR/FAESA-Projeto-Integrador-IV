@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="ativos/icone.svg" type="image/svg+xml">
+  <meta name="description" content="Como está a lavoura agora, em um semáforo simples (dados simulados).">
+  <title>Minha lavoura · AgroAnálise</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="ativos/estilo.css">
+  <script src="ativos/comum.js" defer></script>
+  <script src="ativos/barra_zonas.js" defer></script>
+  <script src="ativos/simulador.js" defer></script>
+</head>
+<body>
+<main class="max-w-3xl mx-auto px-4 py-6 space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <h1 class="text-3xl font-extrabold">Como está a lavoura agora</h1>
+    <div><label for="talhao" class="font-semibold block text-base">Talhão</label>
+      <select id="talhao" class="mt-1 border-2 rounded-xl p-3 bg-white text-lg" style="border-color:var(--borda)"></select></div>
+  </div>
+
+  <section class="cartao" aria-labelledby="t-estado">
+    <h2 id="t-estado" class="sr-only">Estado da lavoura</h2>
+    <div id="estado"></div>
+  </section>
+
+  <div class="grid gap-3 sm:grid-cols-2">
+    <button id="ouvir" type="button" class="botao principal text-2xl" style="min-height:4.5rem">🔊 Ouvir</button>
+    <a id="detalhes" class="botao text-xl" style="min-height:4.5rem" href="painel.html?visao=tecnico">Ver detalhes</a>
+  </div>
+  <p id="aviso-voz" class="aviso-caixa" hidden></p>
+
+  <section class="cartao so-agricultor" aria-labelledby="t-leituras">
+    <h2 id="t-leituras" class="text-xl font-bold mb-2">Leituras</h2>
+    <div id="barras-simples"></div>
+  </section>
+
+  <section class="cartao so-tecnico space-y-3" aria-labelledby="t-tec">
+    <h2 id="t-tec" class="text-xl font-bold">Visão técnica</h2>
+    <div id="barras-tecnico"></div>
+    <div id="dados-tecnicos" class="text-base"></div>
+  </section>
+
+  <p class="text-base">O semáforo ajuda a decidir quando olhar a lavoura. <b>A decisão de manejo é sempre sua.</b></p>
+</main>
+
+<script>
+let atual = null, faixas = null;
+
+function textoParaOuvir() {
+  if (!atual) return "Ainda estou carregando as leituras.";
+  const titulo = atual.classe ? ESTADOS[atual.classe].rotulo : "Sem dados atualizados";
+  return `${atual.nome}. ${titulo}. ${atual.mensagem}`;
+}
+
+function ouvir() {
+  const aviso = document.getElementById("aviso-voz");
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+    aviso.hidden = false;
+    aviso.textContent = "Este navegador não consegue ler em voz alta. A mensagem está escrita acima.";
+    return;
+  }
+  speechSynthesis.cancel();
+  const fala = new SpeechSynthesisUtterance(textoParaOuvir());
+  fala.lang = "pt-BR"; fala.rate = 0.95;
+  // Prefere uma voz instalada no aparelho (localService); só usa voz online do navegador se não houver outra em português.
+  const vozesPt = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("pt"));
+  const voz = vozesPt.find((v) => v.localService && v.lang.toLowerCase() === "pt-br") || vozesPt.find((v) => v.localService) || vozesPt[0];
+  if (voz) fala.voice = voz;
+  else { aviso.hidden = false; aviso.textContent = "Não achei uma voz em português neste aparelho; a leitura pode sair com sotaque."; }
+  speechSynthesis.speak(fala);
+}
+
+function desenhar(dados) {
+  atual = dados.leituras[0];
+  desenharSemaforo(document.getElementById("estado"), { classe: atual.classe, mensagem: atual.mensagem,
+    atualizado_em: atual.atualizado_em, tamanho: "gigante" });
+  document.getElementById("detalhes").href = linkCom("painel.html", { talhao: atual.id, visao: "tecnico" });
+  desenharBarrasZonas(document.getElementById("barras-simples"), faixas, atual, { compacto: true });
+  desenharBarrasZonas(document.getElementById("barras-tecnico"), faixas, atual);
+  const p = atual.proporcoes;
+  document.getElementById("dados-tecnicos").innerHTML = `<ul class="list-disc pl-5 space-y-1">
+    <li>${esc(atual.nome)} · ${esc(nomeEspecie(atual.especie))} · ${esc(atual.local)} · leitura das ${esc(atual.hora_leitura || "—")}${atual.passo !== null ? " (hora simulada)" : ""}</li>
+    <li>Origem dos dados: <b>${esc(atual.origem_dados)}</b> · ${seloMensagem(atual.origem_mensagem)}</li>
+    ${p ? `<li>Proporção de amostras parecidas: Ideal ${pct(p.Verde)}, Atenção ${pct(p.Amarelo)}, Ação crítica ${pct(p.Vermelho)} (não é confiança).</li>` : ""}
+    ${atual.decisao ? `<li>Decisão: peso ${esc(atual.decisao.peso_vermelho)} para o Vermelho${atual.decisao.limiar_vermelho == null ? "" : `, limiar ${pct(atual.decisao.limiar_vermelho)}`}${atual.decisao.regra_conservadora_aplicada ? " (regra conservadora aplicada)" : ""}.</li>` : ""}
+  </ul>`;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("estado").innerHTML = esqueleto("14rem");
+  const sel = document.getElementById("talhao");
+  const inicial = parametroUrl("talhao") || "A";
+  const [t, f] = await Promise.all([chamarApi("/talhoes"), carregarFaixas()]);
+  faixas = f;
+  if (t.ok) sel.innerHTML = t.dados.talhoes.map((x) => `<option value="${esc(x.id)}" ${x.id === inicial ? "selected" : ""}>${esc(x.nome)} (${esc(nomeEspecie(x.especie))})</option>`).join("");
+  const simulador = new Simulador({ talhao: t.ok ? sel.value : inicial, aoAtualizar: desenhar,
+    aoErrar: (r) => desenharSemaforo(document.getElementById("estado"), { classe: null, mensagem: r.erros[0], tamanho: "gigante" }) });
+  sel.addEventListener("change", () => { history.replaceState(null, "", linkVisaoTalhao(sel.value)); simulador.trocarTalhao(sel.value); });
+  document.getElementById("ouvir").addEventListener("click", ouvir);
+  if ("speechSynthesis" in window) speechSynthesis.getVoices(); // carrega a lista de vozes cedo
+  simulador.iniciar();
+});
+
+function linkVisaoTalhao(talhao) {
+  const p = new URLSearchParams(location.search); p.set("talhao", talhao);
+  return "agricultor.html?" + p.toString();
+}
+</script>
+</body>
+</html>

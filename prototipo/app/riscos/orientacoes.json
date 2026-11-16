@@ -1,0 +1,59 @@
+{
+  "_comentario": "Orientações GERAIS de prevenção, fixas e revisáveis por um humano do grupo antes do C3. Proibido: produto, dose, volume, calendário de manejo, diagnóstico de praga ou doença, ou instrução agronômica específica. O LLM NÃO gera estes textos. 'fonte_oficial' é a entidade a consultar (sem citação inventada).",
+  "revisado_por_humano": false,
+  "aviso": "Dados simulados. Não use para decisões de segurança. Em emergência, ligue para a Defesa Civil (199) ou para o Corpo de Bombeiros (193).",
+  "emergencia": {
+    "defesa_civil": "199",
+    "bombeiros": "193",
+    "situacao": "confirmado",
+    "nota": "Números confirmados em fonte oficial em 15/11/2026: notícia do CBMES de 21/01/2026 cita 193 (Bombeiros) e 199 (Defesa Civil); o Ministério das Comunicações (11/09/2026) também lista os dois. A revisão humana dos textos das orientações continua pendente (revisado_por_humano=false)."
+  },
+  "tipos": {
+    "alagamento": {
+      "nome": "Alagamento",
+      "o_que_fazer": [
+        "Acompanhe os alertas oficiais de chuva e de cheia de rios.",
+        "Em chuva forte, evite baixadas, beiras de córrego e estradas alagadas.",
+        "Não atravesse água corrente a pé, de moto ou de carro.",
+        "Guarde documentos e objetos importantes em lugar alto."
+      ],
+      "fonte_oficial": "Defesa Civil do Espírito Santo e Defesa Civil do município"
+    },
+    "chuvas_intensas": {
+      "nome": "Chuvas intensas",
+      "o_que_fazer": [
+        "Acompanhe os avisos meteorológicos oficiais antes de ir para a lavoura.",
+        "Evite trabalhar no campo durante tempestade com raios.",
+        "Antes da época de chuvas, confira valas, bueiros e saídas de água da propriedade."
+      ],
+      "fonte_oficial": "INMET (avisos meteorológicos) e Defesa Civil"
+    },
+    "incendio": {
+      "nome": "Incêndio",
+      "o_que_fazer": [
+        "Não use fogo para limpar áreas, principalmente em tempo seco.",
+        "Mantenha aceiros e áreas limpas ao redor da lavoura, das construções e das cercas.",
+        "Ao ver fumaça ou fogo, afaste-se e chame o Corpo de Bombeiros."
+      ],
+      "fonte_oficial": "Corpo de Bombeiros Militar do Espírito Santo"
+    },
+    "deslizamento": {
+      "nome": "Deslizamento de terra",
+      "o_que_fazer": [
+        "Observe sinais de movimento de terra: trincas no chão ou nas paredes, árvores e postes inclinados, água barrenta saindo do barranco.",
+        "Em chuva forte, afaste-se de encostas e barrancos.",
+        "Ao notar esses sinais, saia do local e avise a Defesa Civil."
+      ],
+      "fonte_oficial": "Defesa Civil do Espírito Santo e Defesa Civil do município"
+    },
+    "pragas": {
+      "nome": "Pragas",
+      "o_que_fazer": [
+        "Observe a lavoura com frequência e anote o que encontrar, com data e local.",
+        "Ao notar sinais de praga ou doença, procure a assistência técnica antes de qualquer medida.",
+        "Não use nenhum produto na lavoura sem orientação de um profissional habilitado."
+      ],
+      "fonte_oficial": "Incaper (assistência técnica e extensão rural do Espírito Santo)"
+    }
+  }
+}

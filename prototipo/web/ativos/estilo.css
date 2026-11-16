@@ -1,0 +1,109 @@
+/* Cores do semáforo usadas SOMENTE para status (tokens inspirados no tema do hackathon). */
+:root {
+  --verde: #2E7D32; --verde-fundo: #E7F1E5; --verde-texto: #1D5220;
+  --amarelo: #D98A1C; --amarelo-fundo: #FDF1DE; --amarelo-texto: #6B3B00;
+  --vermelho: #B3261E; --vermelho-fundo: #FBE8E6; --vermelho-texto: #8A1B15;
+  --cinza: #8C877E; --cinza-fundo: #ECEAE5; --cinza-texto: #4A4640;
+  --tinta: #1F1F1F; --fundo: #F7F6F2; --borda: #CFCAC2; --azul: #1565C0;
+}
+body { background: var(--fundo); color: var(--tinta); font-size: 18px; padding-top: 2.6rem; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* Visão: elementos só do técnico ou só do agricultor (alternados por ?visao=, sem armazenamento local). */
+[data-visao="agricultor"] .so-tecnico { display: none !important; }
+[data-visao="tecnico"] .so-agricultor { display: none !important; }
+
+.pular { position: absolute; left: -999px; top: 3rem; z-index: 60; background: #fff; padding: .75rem 1rem; border: 3px solid var(--azul); border-radius: .75rem; }
+.pular:focus { left: 1rem; }
+.faixa-simulado { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--tinta); color: #fff;
+  text-align: center; font-weight: 700; letter-spacing: .04em; font-size: .85rem; padding: .5rem .75rem; }
+.aviso-servidor { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 55; background: var(--tinta);
+  color: #fff; padding: .85rem 1.25rem; border-radius: .85rem; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: 92vw; }
+.menu a, .alternador a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: .5rem 1rem; border-radius: .75rem;
+  font-weight: 600; border: 2px solid transparent; }
+.menu a:hover { background: #fff; border-color: var(--borda); }
+.menu a[aria-current="page"] { background: var(--tinta); color: #fff; }
+.alternador { display: inline-flex; border: 2px solid var(--tinta); border-radius: .85rem; overflow: hidden; background: #fff; }
+.alternador a { border-radius: 0; border: 0; }
+.alternador a[aria-current="true"] { background: var(--tinta); color: #fff; }
+.cartao { background: #fff; border: 1.5px solid var(--borda); border-radius: 1rem; padding: 1.25rem; }
+.botao { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 3.25rem; padding: .6rem 1.25rem;
+  border-radius: .85rem; font-weight: 700; border: 2px solid var(--tinta); background: #fff; cursor: pointer; }
+.botao:hover { background: #f0eee8; }
+.botao.principal { background: var(--tinta); color: #fff; }
+.botao.principal:hover { background: #3a3a3a; }
+.botao.pequeno { min-height: 2.75rem; padding: .4rem .9rem; font-size: .95rem; }
+.botao[aria-pressed="true"] { background: var(--azul); border-color: var(--azul); color: #fff; }
+.botao:disabled { opacity: .5; cursor: not-allowed; }
+.botao:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--azul); outline-offset: 2px; }
+
+/* Semáforo: lâmpadas com forma própria (círculo = Ideal, triângulo = Atenção, octógono = Ação crítica). */
+.semaforo { display: flex; flex-direction: column; align-items: center; gap: .6rem; background: #2b2b2b; padding: 1rem;
+  border-radius: 1.5rem; width: max-content; margin: 0 auto; }
+.lampada { width: 4.5rem; height: 4.5rem; background: #555; opacity: .35; transition: background .6s ease, opacity .6s ease, transform .6s ease; }
+.lampada.verde { border-radius: 50%; }
+.lampada.amarelo { clip-path: polygon(50% 4%, 98% 92%, 2% 92%); }
+.lampada.vermelho { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+.lampada.acesa { opacity: 1; transform: scale(1.04); }
+.lampada.acesa.verde { background: var(--verde); box-shadow: 0 0 18px #8fd093; }
+.lampada.acesa.amarelo { background: var(--amarelo); }
+.lampada.acesa.vermelho { background: var(--vermelho); }
+.semaforo.gigante { padding: 1.25rem 1.5rem; gap: .9rem; }
+.semaforo.gigante .lampada { width: 7.5rem; height: 7.5rem; }
+.semaforo.mini { flex-direction: row; padding: .35rem .5rem; gap: .3rem; border-radius: .8rem; margin: 0; }
+.semaforo.mini .lampada { width: 1.5rem; height: 1.5rem; }
+
+.estado { border-radius: 1rem; padding: 1.1rem 1.25rem; border: 3px solid; transition: background-color .6s ease, border-color .6s ease, color .6s ease; }
+.estado .titulo-estado { font-size: 1.875rem; }
+.estado .mensagem-estado { font-size: 1.25rem; }
+.estado.gigante .titulo-estado { font-size: 2.6rem; line-height: 1.1; }
+.estado.gigante .mensagem-estado { font-size: 1.6rem; }
+.estado.gigante svg { width: 56px; height: 56px; }
+.estado.verde { background: var(--verde-fundo); border-color: var(--verde); color: var(--verde-texto); }
+.estado.amarelo { background: var(--amarelo-fundo); border-color: var(--amarelo); color: var(--amarelo-texto); }
+.estado.vermelho { background: var(--vermelho-fundo); border-color: var(--vermelho); color: var(--vermelho-texto); }
+.estado.cinza { background: var(--cinza-fundo); border-color: var(--cinza); color: var(--cinza-texto); border-style: dashed; }
+.selo { display: inline-block; font-size: .85rem; font-weight: 700; padding: .25rem .65rem; border-radius: 999px; border: 2px solid; }
+.selo.llm { background: #E6EEF8; color: #0D3F7A; border-color: var(--azul); }
+.selo.padrao { background: var(--cinza-fundo); color: var(--cinza-texto); border-color: var(--cinza); }
+.barra { height: .9rem; border-radius: 999px; background: #e5e2db; overflow: hidden; }
+.barra > span { display: block; height: 100%; transition: width .6s ease; }
+.erro-caixa { background: var(--vermelho-fundo); border: 2px solid var(--vermelho); color: var(--vermelho-texto);
+  border-radius: .85rem; padding: .85rem 1rem; }
+.aviso-caixa { background: #E6EEF8; border: 2px solid var(--azul); color: #0D3F7A; border-radius: .85rem; padding: .85rem 1rem; }
+table.tabela { width: 100%; border-collapse: collapse; font-size: .95rem; }
+table.tabela th, table.tabela td { padding: .5rem .6rem; border-bottom: 1px solid var(--borda); text-align: left; }
+
+/* Carregando (skeleton) */
+.esqueleto { border-radius: 1rem; background: linear-gradient(90deg, #e9e6df 25%, #f4f2ed 50%, #e9e6df 75%);
+  background-size: 200% 100%; animation: brilho 1.4s infinite linear; }
+@keyframes brilho { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Barras com zonas (barra_zonas.js). Zonas em tons claros de status + texto; o marcador mostra o valor. */
+.zonas { position: relative; margin-top: .9rem; height: 1.6rem; border-radius: .5rem; overflow: visible; display: flex; border: 1.5px solid var(--borda); }
+.zonas > .zona { height: 100%; }
+.zona.critica { background: repeating-linear-gradient(135deg, #F6D3CF 0 6px, #FBE8E6 6px 12px); }
+.zona.atencao { background: repeating-linear-gradient(135deg, #FBE3BD 0 4px, #FDF1DE 4px 9px); }
+.zona.ok { background: #DCEBD8; }
+.zonas > .zona:first-child { border-radius: .4rem 0 0 .4rem; }
+.zonas > .zona:last-child { border-radius: 0 .4rem .4rem 0; }
+.marcador { position: absolute; top: -.45rem; bottom: -.45rem; width: 4px; margin-left: -2px; background: var(--tinta);
+  border-radius: 2px; transition: left .6s ease; }
+.marcador::after { content: ""; position: absolute; top: -.35rem; left: -5px; border: 7px solid transparent; border-top-color: var(--tinta); }
+.rotulos-zonas { display: flex; justify-content: space-between; font-size: .85rem; color: var(--cinza-texto); margin-top: .35rem; }
+
+/* Cartões dos talhões */
+.cartao-talhao { display: block; text-align: left; width: 100%; border-left-width: 10px; transition: transform .2s ease, box-shadow .2s ease; }
+.cartao-talhao:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+.cartao-talhao.verde { border-left-color: var(--verde); }
+.cartao-talhao.amarelo { border-left-color: var(--amarelo); }
+.cartao-talhao.vermelho { border-left-color: var(--vermelho); }
+.cartao-talhao.cinza { border-left-color: var(--cinza); border-left-style: dashed; }
+
+/* Modo apresentação (index.html) */
+.demo { position: fixed; inset: 0; z-index: 70; background: rgba(20,20,20,.72); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.demo-caixa { background: var(--fundo); border-radius: 1.25rem; width: min(980px, 100%); max-height: calc(100vh - 2rem); overflow: auto; }
+.demo-progresso { height: .5rem; background: #e5e2db; border-radius: 1.25rem 1.25rem 0 0; overflow: hidden; }
+.demo-progresso > span { display: block; height: 100%; background: var(--tinta); transition: width .3s linear; }
+.legenda { font-size: 1.35rem; line-height: 1.4; }

@@ -1,0 +1,17 @@
+# Dados e banco local
+dados/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Ambientes e caches
+.venv/
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vercel
+.env*

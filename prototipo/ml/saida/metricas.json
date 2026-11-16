@@ -1,0 +1,503 @@
+{
+  "acuracia": 0.76,
+  "por_classe": {
+    "Verde": {
+      "precisao": 0.6872,
+      "revocacao": 0.9116,
+      "f1": 0.7836,
+      "suporte": 147
+    },
+    "Amarelo": {
+      "precisao": 0.7391,
+      "revocacao": 0.4337,
+      "f1": 0.5466,
+      "suporte": 196
+    },
+    "Vermelho": {
+      "precisao": 0.8172,
+      "revocacao": 0.9222,
+      "f1": 0.8665,
+      "suporte": 257
+    }
+  },
+  "media_macro": {
+    "precisao": 0.7479,
+    "revocacao": 0.7558,
+    "f1": 0.7323
+  },
+  "matriz_confusao": [
+    [
+      134,
+      13,
+      0
+    ],
+    [
+      58,
+      85,
+      53
+    ],
+    [
+      3,
+      17,
+      237
+    ]
+  ],
+  "revocacao_vermelho": 0.9222,
+  "falsos_negativos_vermelho": 20,
+  "classes": [
+    "Verde",
+    "Amarelo",
+    "Vermelho"
+  ],
+  "algoritmo": "DecisionTreeClassifier(max_depth=8, min_samples_leaf=5)",
+  "decisao": {
+    "peso_vermelho": 3,
+    "limiar_vermelho": null,
+    "meta_revocacao_vermelho": 0.9,
+    "meta_atingida_no_teste": true,
+    "criterio": "Validação cruzada estratificada (k=5) só no treino: entre as combinações de peso do Vermelho e limiar com revocação do Vermelho >= 0,90, a de maior F1 macro.",
+    "validacao_cruzada_escolhida": {
+      "peso_vermelho": 3,
+      "limiar_vermelho": null,
+      "revocacao_vermelho": 0.9155,
+      "precisao_vermelho": 0.8626,
+      "acuracia": 0.7833,
+      "f1_macro": 0.7613
+    },
+    "validacao_cruzada_todas": [
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": null,
+        "revocacao_vermelho": 0.8484,
+        "precisao_vermelho": 0.9268,
+        "acuracia": 0.7746,
+        "f1_macro": 0.7598
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.5,
+        "revocacao_vermelho": 0.8513,
+        "precisao_vermelho": 0.926,
+        "acuracia": 0.7754,
+        "f1_macro": 0.7603
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.45,
+        "revocacao_vermelho": 0.8513,
+        "precisao_vermelho": 0.926,
+        "acuracia": 0.7754,
+        "f1_macro": 0.7603
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.4,
+        "revocacao_vermelho": 0.8581,
+        "precisao_vermelho": 0.9217,
+        "acuracia": 0.7762,
+        "f1_macro": 0.7603
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.35,
+        "revocacao_vermelho": 0.861,
+        "precisao_vermelho": 0.9162,
+        "acuracia": 0.775,
+        "f1_macro": 0.7585
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.3,
+        "revocacao_vermelho": 0.8746,
+        "precisao_vermelho": 0.8991,
+        "acuracia": 0.7733,
+        "f1_macro": 0.7545
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.25,
+        "revocacao_vermelho": 0.8873,
+        "precisao_vermelho": 0.8838,
+        "acuracia": 0.7717,
+        "f1_macro": 0.7506
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.2,
+        "revocacao_vermelho": 0.896,
+        "precisao_vermelho": 0.8601,
+        "acuracia": 0.7633,
+        "f1_macro": 0.7391
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.15,
+        "revocacao_vermelho": 0.9164,
+        "precisao_vermelho": 0.7971,
+        "acuracia": 0.7371,
+        "f1_macro": 0.7013
+      },
+      {
+        "peso_vermelho": 1,
+        "limiar_vermelho": 0.1,
+        "revocacao_vermelho": 0.9456,
+        "precisao_vermelho": 0.7066,
+        "acuracia": 0.6887,
+        "f1_macro": 0.6196
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": null,
+        "revocacao_vermelho": 0.8756,
+        "precisao_vermelho": 0.9028,
+        "acuracia": 0.7729,
+        "f1_macro": 0.7538
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.5,
+        "revocacao_vermelho": 0.8863,
+        "precisao_vermelho": 0.895,
+        "acuracia": 0.7733,
+        "f1_macro": 0.7526
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.45,
+        "revocacao_vermelho": 0.8999,
+        "precisao_vermelho": 0.867,
+        "acuracia": 0.7646,
+        "f1_macro": 0.7396
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.4,
+        "revocacao_vermelho": 0.9077,
+        "precisao_vermelho": 0.8491,
+        "acuracia": 0.7583,
+        "f1_macro": 0.7303
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.35,
+        "revocacao_vermelho": 0.9077,
+        "precisao_vermelho": 0.8491,
+        "acuracia": 0.7583,
+        "f1_macro": 0.7303
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.3,
+        "revocacao_vermelho": 0.9116,
+        "precisao_vermelho": 0.8353,
+        "acuracia": 0.7521,
+        "f1_macro": 0.7216
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.25,
+        "revocacao_vermelho": 0.9145,
+        "precisao_vermelho": 0.832,
+        "acuracia": 0.7512,
+        "f1_macro": 0.7199
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.2,
+        "revocacao_vermelho": 0.93,
+        "precisao_vermelho": 0.8062,
+        "acuracia": 0.7421,
+        "f1_macro": 0.704
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.15,
+        "revocacao_vermelho": 0.9456,
+        "precisao_vermelho": 0.7305,
+        "acuracia": 0.6996,
+        "f1_macro": 0.6368
+      },
+      {
+        "peso_vermelho": 2,
+        "limiar_vermelho": 0.1,
+        "revocacao_vermelho": 0.9582,
+        "precisao_vermelho": 0.6791,
+        "acuracia": 0.6663,
+        "f1_macro": 0.5725
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": null,
+        "revocacao_vermelho": 0.9155,
+        "precisao_vermelho": 0.8626,
+        "acuracia": 0.7833,
+        "f1_macro": 0.7613
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.5,
+        "revocacao_vermelho": 0.9174,
+        "precisao_vermelho": 0.8605,
+        "acuracia": 0.7829,
+        "f1_macro": 0.7605
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.45,
+        "revocacao_vermelho": 0.9193,
+        "precisao_vermelho": 0.8608,
+        "acuracia": 0.7837,
+        "f1_macro": 0.7612
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.4,
+        "revocacao_vermelho": 0.932,
+        "precisao_vermelho": 0.8267,
+        "acuracia": 0.7708,
+        "f1_macro": 0.7431
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.35,
+        "revocacao_vermelho": 0.9329,
+        "precisao_vermelho": 0.8226,
+        "acuracia": 0.7688,
+        "f1_macro": 0.7403
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.3,
+        "revocacao_vermelho": 0.9446,
+        "precisao_vermelho": 0.8066,
+        "acuracia": 0.7638,
+        "f1_macro": 0.7315
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.25,
+        "revocacao_vermelho": 0.9504,
+        "precisao_vermelho": 0.7774,
+        "acuracia": 0.7467,
+        "f1_macro": 0.7073
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.2,
+        "revocacao_vermelho": 0.9553,
+        "precisao_vermelho": 0.7533,
+        "acuracia": 0.7333,
+        "f1_macro": 0.6873
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.15,
+        "revocacao_vermelho": 0.964,
+        "precisao_vermelho": 0.7204,
+        "acuracia": 0.7137,
+        "f1_macro": 0.655
+      },
+      {
+        "peso_vermelho": 3,
+        "limiar_vermelho": 0.1,
+        "revocacao_vermelho": 0.9689,
+        "precisao_vermelho": 0.6987,
+        "acuracia": 0.6992,
+        "f1_macro": 0.6293
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": null,
+        "revocacao_vermelho": 0.9291,
+        "precisao_vermelho": 0.8498,
+        "acuracia": 0.7692,
+        "f1_macro": 0.7391
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.5,
+        "revocacao_vermelho": 0.9349,
+        "precisao_vermelho": 0.8461,
+        "acuracia": 0.7692,
+        "f1_macro": 0.7379
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.45,
+        "revocacao_vermelho": 0.9368,
+        "precisao_vermelho": 0.8332,
+        "acuracia": 0.7625,
+        "f1_macro": 0.7288
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.4,
+        "revocacao_vermelho": 0.9378,
+        "precisao_vermelho": 0.8269,
+        "acuracia": 0.7592,
+        "f1_macro": 0.7242
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.35,
+        "revocacao_vermelho": 0.9427,
+        "precisao_vermelho": 0.8063,
+        "acuracia": 0.7512,
+        "f1_macro": 0.7152
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.3,
+        "revocacao_vermelho": 0.9495,
+        "precisao_vermelho": 0.7766,
+        "acuracia": 0.7342,
+        "f1_macro": 0.6901
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.25,
+        "revocacao_vermelho": 0.9524,
+        "precisao_vermelho": 0.7729,
+        "acuracia": 0.7325,
+        "f1_macro": 0.6868
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.2,
+        "revocacao_vermelho": 0.9621,
+        "precisao_vermelho": 0.7511,
+        "acuracia": 0.7217,
+        "f1_macro": 0.668
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.15,
+        "revocacao_vermelho": 0.9679,
+        "precisao_vermelho": 0.7259,
+        "acuracia": 0.7087,
+        "f1_macro": 0.6459
+      },
+      {
+        "peso_vermelho": 4,
+        "limiar_vermelho": 0.1,
+        "revocacao_vermelho": 0.9708,
+        "precisao_vermelho": 0.711,
+        "acuracia": 0.6987,
+        "f1_macro": 0.6284
+      }
+    ]
+  },
+  "sem_ajuste_conservador": {
+    "acuracia": 0.7517,
+    "media_macro": {
+      "precisao": 0.7395,
+      "revocacao": 0.7601,
+      "f1": 0.7395
+    },
+    "revocacao_vermelho": 0.8093,
+    "falsos_negativos_vermelho": 49,
+    "precisao_vermelho": 0.8927,
+    "matriz_confusao": [
+      [
+        136,
+        11,
+        0
+      ],
+      [
+        64,
+        107,
+        25
+      ],
+      [
+        7,
+        42,
+        208
+      ]
+    ],
+    "descricao": "mesma árvore, sem peso extra e sem limiar"
+  },
+  "alternativa_so_limiar": {
+    "acuracia": 0.7417,
+    "media_macro": {
+      "precisao": 0.7391,
+      "revocacao": 0.7386,
+      "f1": 0.7068
+    },
+    "revocacao_vermelho": 0.9183,
+    "falsos_negativos_vermelho": 21,
+    "precisao_vermelho": 0.7919,
+    "matriz_confusao": [
+      [
+        136,
+        8,
+        3
+      ],
+      [
+        64,
+        73,
+        59
+      ],
+      [
+        7,
+        14,
+        236
+      ]
+    ],
+    "limiar_vermelho": 0.15,
+    "validacao_cruzada": {
+      "peso_vermelho": 1,
+      "limiar_vermelho": 0.15,
+      "revocacao_vermelho": 0.9164,
+      "precisao_vermelho": 0.7971,
+      "acuracia": 0.7371,
+      "f1_macro": 0.7013
+    },
+    "descricao": "mesma árvore sem peso extra, com o limiar conservador escolhido pelo mesmo critério"
+  },
+  "linha_base": {
+    "estrategia": "classe majoritária (DummyClassifier)",
+    "acuracia": 0.4283,
+    "media_macro": {
+      "precisao": 0.1428,
+      "revocacao": 0.3333,
+      "f1": 0.1999
+    },
+    "revocacao_vermelho": 1.0
+  },
+  "teto_referencia": {
+    "acuracia": 0.8183,
+    "media_macro": {
+      "precisao": 0.8092,
+      "revocacao": 0.8216,
+      "f1": 0.8032
+    },
+    "revocacao_vermelho": 0.9105,
+    "falsos_negativos_vermelho": 23,
+    "precisao_vermelho": 0.8931,
+    "matriz_confusao": [
+      [
+        143,
+        4,
+        0
+      ],
+      [
+        54,
+        114,
+        28
+      ],
+      [
+        0,
+        23,
+        234
+      ]
+    ],
+    "descricao": "A própria regra de rotulagem aplicada às leituras sem ruído, comparada aos rótulos gerados com ruído de medição. Serve de referência (teto aproximado) para a acurácia do modelo."
+  },
+  "tamanho_treino": 2400,
+  "tamanho_teste": 600,
+  "divisao": "80/20 estratificada (train_test_split, random_state=42)",
+  "origem_dados": "simulado",
+  "versao_scikit_learn": "1.9.1",
+  "gerado_em": "2026-11-15T23:50:29+00:00",
+  "aviso": "Rótulos gerados por regras sobre as mesmas variáveis de entrada: este resultado valida o pipeline, não a eficácia agronômica em campo."
+}
