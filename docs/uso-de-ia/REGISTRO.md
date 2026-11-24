@@ -1,8 +1,8 @@
 # Registro do uso de IA no desenvolvimento
 
-Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de engenharia de software feito com apoio de IA é registrado aqui, com o prompt utilizado. Quem usa a IA faz o registro no mesmo commit do material gerado ou revisado.
+Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de engenharia de software feito com apoio de IA é registrado aqui, com o prompt utilizado. Quem usa a IA faz o registro no mesmo commit do material gerado ou revisado. 
 
-## Modelo de registro
+## Modelo de registro 
 
 ```markdown
 ## Registro de uso de IA — AAAA-MM-DD
@@ -19,8 +19,8 @@ Conforme a seção 11 do edital do Projeto Integrador IV, todo o processo de eng
 
 ---
 
-## Registro de uso de IA — 2026-11-04 (1/8): conferência do relatório C1 com o edital
-- **Integrante:** Juliano Dantas (JulianoDADR)
+## Registro de uso de IA — 2026-11-04 (1/8): conferência do relatório C1 com o edital 
+- **Integrante:** Juliano Dantas (JulianoDADR) 
 - **Ferramenta / modelo:** Claude Code (Claude Sonnet 5.5)
 - **Tarefa:** comparar o relatório do projeto com o edital do PI-IV e apontar lacunas para o C1.
 - **Prompt utilizado:**
