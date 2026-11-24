@@ -36,12 +36,12 @@ Agricultores familiares cafeicultores do Espírito Santo. Segundo o Censo Agrope
 
 | Indicador | Meta proposta (C3) |
 |---|---|
-| Taxa de adoção autônoma (3 tarefas sem ajuda) | ≥ 70% dos participantes (mínimo de 10) |
-| Clareza percebida do semáforo (escala 1 a 5) | ≥ 80% das respostas 4 ou 5 |
-| Disponibilidade de leituras válidas (72 h) | ≥ 95% |
-| Revocação da classe Vermelho (conjunto de teste) | ≥ 0,90 |
-| Redução do desperdício de água | Plano de mensuração (sem meta numérica no semestre) |
-| Redução de perdas por identificação tardia | Indicador de longo prazo |
+| Taxa de adoção autônoma (3 tarefas sem ajuda) | ≥ 70% dos participantes (mínimo de 10). |
+| Clareza percebida do semáforo (escala 1 a 5) | ≥ 80% das respostas 4 ou 5. |
+| Disponibilidade de leituras válidas (72 h) | ≥ 95%. |
+| Revocação da classe Vermelho (conjunto de teste) | ≥ 0,90. |
+| Redução do desperdício de água | Plano de mensuração (sem meta numérica no semestre). |
+| Redução de perdas por identificação tardia | Indicador de longo prazo. |
 
 ## ⚙️ 3. Arquitetura
 
