@@ -1,4 +1,4 @@
-# Blueprint do Render (opcional): cria o serviço web a partir do Dockerfile em prototipo/.
+## Blueprint do Render (opcional): cria o serviço web a partir do Dockerfile em prototipo/.
 # Confira no painel do Render os nomes de campos e as regras vigentes do plano gratuito antes de usar (docs/DEPLOY.md).
 services:
   - type: web
