@@ -73,3 +73,5 @@ LGPD (sem dados pessoais na operação básica), mitigação de *prompt injectio
 Cauan Henrique Damascena Gomes · Eduardo Rodrigues Rangel Malaquias · Guilherme de Souza Paiva · Juliano de Andrade Dantas Rodrigues · Rubiale Alves de Melo Filho
 
 Cada integrante faz *commits* com o próprio usuário e e-mail. O uso de IA no desenvolvimento é registrado em `docs/uso-de-ia/`.
+
+.
