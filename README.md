@@ -1,12 +1,12 @@
 # 🌱 AgroAnálise: Inclusão Digital no Campo com IoT e Machine Learning
 
 Projeto Integrador IV (2026/2) — FAESA Centro Universitário — Sistemas de Informação e Ciência da Computação
-Professor: Prof. M.Sc. Howard Cruz Roatti
+Professor: Prof. M.Sc. Howard Cruz Roatti 
 
 O **AgroAnálise** é um sistema de monitoramento de plantações de café (Arábica e Conilon) que combina Internet das Coisas (IoT), Machine Learning e uma aplicação web. Ele transforma leituras de solo e clima em um **semáforo** simples, voltado a agricultores familiares com baixo letramento digital.
-
+ 
 ## 📍 Status dos checkpoints
-
+ 
 | Checkpoint | Prazo | Situação |
 |---|---|---|
 | **C1 – Relatório** | 18/09/2026 | Entregue e **revisado** conforme a correção do professor e o edital (ver `Relatorio_AgroAnalise_Projeto_Integrador_IV final.pdf` e `docs/`) |
